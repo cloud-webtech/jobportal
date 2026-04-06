@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Unsubscribe — MyCareerJob.in</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .unsub-wrap{max-width:500px;margin:100px auto 60px;padding:0 20px;text-align:center}
+    .unsub-icon{font-size:4rem;margin-bottom:20px;animation:bounce 1s ease infinite}
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    .unsub-card{background:#fff;border-radius:20px;padding:36px;box-shadow:0 4px 20px rgba(0,0,0,.1)}
+    .unsub-title{font-family:var(--head);font-size:1.6rem;font-weight:800;margin-bottom:10px}
+    .unsub-email{background:#f3f4f6;border-radius:10px;padding:12px;font-size:.92rem;font-weight:600;margin:16px 0;color:var(--txt)}
+    .unsub-btn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,#E74C3C,#C0392B);color:#fff;border:none;border-radius:26px;font-weight:800;font-size:1rem;cursor:pointer;margin-top:20px;transition:all .3s}
+    .unsub-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(231,76,60,.4)}
+    .resub-btn{display:block;width:100%;padding:12px;background:transparent;border:2px solid var(--orange);color:var(--orange);border-radius:26px;font-weight:700;font-size:.9rem;cursor:pointer;margin-top:10px;transition:all .3s}
+    .resub-btn:hover{background:var(--orange);color:#fff}
+    .done-state{display:none}
+    .done-icon{font-size:3rem;margin-bottom:14px}
+    .done-title{font-family:var(--head);font-size:1.3rem;font-weight:800;margin-bottom:8px}
+  </style>
+</head>
+<body>
+<header class="hdr" id="hdr">
+  <div class="hdr-inner">
+    <a href="index.html" class="logo"><span class="logo-ico">💼</span>MyCareerJob<span>.in</span></a>
+    <nav class="nav"><a href="index.html">Home</a><a href="jobs.html">All Jobs</a></nav>
+  </div>
+</header>
+
+<div class="unsub-wrap">
+  <div class="unsub-icon">📧</div>
+
+  <!-- Unsubscribe State -->
+  <div class="unsub-card" id="unsubState">
+    <div class="unsub-title">Unsubscribe from Job Alerts</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:0">You are about to unsubscribe this email from MyCareerJob.in job alerts:</p>
+    <div class="unsub-email" id="emailDisplay">Loading...</div>
+    <p style="color:var(--muted);font-size:.82rem">You will no longer receive job alert notifications.</p>
+    <button class="unsub-btn" onclick="doUnsubscribe()" id="unsubBtn">Yes, Unsubscribe Me</button>
+    <button class="resub-btn" onclick="window.location.href='index.html'">No, Keep My Alerts</button>
+  </div>
+
+  <!-- Success State -->
+  <div class="unsub-card done-state" id="doneState">
+    <div class="done-icon">✅</div>
+    <div class="done-title">You have been unsubscribed</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:20px">You will no longer receive job alerts from MyCareerJob.in.</p>
+    <p style="color:var(--muted);font-size:.82rem">Changed your mind? You can re-subscribe anytime on our homepage.</p>
+    <a href="index.html#alerts" style="display:block;margin-top:20px;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;padding:13px 24px;border-radius:24px;font-weight:700;text-align:center">Re-subscribe</a>
+    <a href="index.html" style="display:block;margin-top:10px;color:var(--orange);font-weight:600">← Browse Jobs</a>
+  </div>
+
+  <!-- Error State -->
+  <div class="unsub-card done-state" id="errState">
+    <div class="done-icon">❌</div>
+    <div class="done-title">Something went wrong</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:20px" id="errMsg">Could not process your unsubscribe request.</p>
+    <a href="contact.html" style="display:block;background:#f3f4f6;color:var(--txt);padding:12px 24px;border-radius:24px;font-weight:600;text-align:center">Contact Us</a>
+  </div>
+</div>
+
+<script src="js/supabase.js"></script>
+<script>
+let subscriberEmail = '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  window.addEventListener('scroll', () => document.getElementById('hdr')?.classList.toggle('scrolled', scrollY > 20));
+
+  // Get email from URL params
+  const params = new URLSearchParams(location.search);
+  let email = params.get('email') || '';
+
+  // Try base64 decode (for security)
+  if (!email && params.get('token')) {
+    try { email = atob(params.get('token')); } catch {}
+  }
+
+  if (!email) {
+    showError('No email address found in the unsubscribe link. Please contact us.');
+    return;
+  }
+
+  subscriberEmail = email.trim();
+  document.getElementById('emailDisplay').textContent = subscriberEmail;
+
+  // Verify subscriber exists
+  const { data } = await sb.from('subscribers').select('id, is_active, email').eq('email', subscriberEmail).maybeSingle();
+  if (!data) {
+    showError(`Email "${subscriberEmail}" is not subscribed to our alerts.`);
+    return;
+  }
+  if (!data.is_active) {
+    // Already unsubscribed
+    document.getElementById('unsubState').style.display = 'none';
+    document.getElementById('doneState').style.display = 'block';
+    document.querySelector('.done-title').textContent = 'Already unsubscribed';
+  }
+});
+
+async function doUnsubscribe() {
+  const btn = document.getElementById('unsubBtn');
+  btn.disabled = true; btn.textContent = '⏳ Processing...';
+
+  try {
+    const { error } = await sb
+      .from('subscribers')
+      .update({ is_active: false, unsubscribed_at: new Date().toISOString() })
+      .eq('email', subscriberEmail);
+
+    if (error) throw error;
+
+    document.getElementById('unsubState').style.display = 'none';
+    document.getElementById('doneState').style.display  = 'block';
+  } catch(e) {
+    showError('Failed to unsubscribe: ' + e.message + '. Please contact admin@mycareerjob.in');
+    btn.disabled = false; btn.textContent = 'Yes, Unsubscribe Me';
+  }
+}
+
+function showError(msg) {
+  document.getElementById('unsubState').style.display = 'none';
+  document.getElementById('errState').style.display   = 'block';
+  document.getElementById('errMsg').textContent = msg;
+}
+</script>
+</body>
+</html>

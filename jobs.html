@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>All Jobs — MyCareerJob.in</title>
+  <meta name="description" content="Browse all latest government and private jobs in Maharashtra 2025."/>
+  <link rel="canonical" href="https://mycareerjob.in/jobs.html"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div id="particles"></div>
+
+<header class="hdr" id="hdr">
+  <div class="hdr-inner">
+    <a href="index.html" class="logo"><span class="logo-ico">💼</span>MyCareerJob<span>.in</span></a>
+    <nav class="nav" id="nav">
+      <a href="index.html">Home</a>
+      <a href="jobs.html?cat=Govt">Govt Jobs</a>
+      <a href="jobs.html?cat=IT">IT Jobs</a>
+      <a href="jobs.html?cat=Bank">Bank Jobs</a>
+      <a href="jobs.html?cat=Railway">Railway</a>
+      <a href="marathi.html">मराठी</a>
+      <a href="index.html#alerts" class="cta">🔔 Alerts</a>
+    </nav>
+    <button class="burger" id="burger"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- Dynamic Hero based on category -->
+<div class="cat-hero" id="pageHero">
+  <h1 id="heroTitle">All Jobs</h1>
+  <p id="heroSub">Showing all available job openings — Real-time updates</p>
+</div>
+
+<div class="ticker-wrap">
+  <div class="ticker-label">🔴 LIVE</div>
+  <div class="ticker-track"><div class="ticker-inner" id="ticker">Loading...</div></div>
+</div>
+
+<div class="wrap">
+
+  <!-- Filters -->
+  <div class="filters" style="margin-bottom:24px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div style="position:relative">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search jobs..."
+          style="padding:9px 14px 9px 36px;border:2px solid var(--border);border-radius:10px;font-size:.88rem;outline:none;min-width:220px;transition:var(--ease)"
+          oninput="applyFilter()" onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"/>
+      </div>
+      <select class="sort-sel" id="catSel" onchange="applyFilter()">
+        <option value="">All Categories</option>
+        <option value="Govt">🏛️ Govt</option>
+        <option value="IT">💻 IT</option>
+        <option value="Private">🏢 Private</option>
+        <option value="Bank">🏦 Bank</option>
+        <option value="Railway">🚂 Railway</option>
+        <option value="Defence">🎖️ Defence</option>
+        <option value="Police">👮 Police</option>
+        <option value="Health">🏥 Health</option>
+        <option value="Education">🎓 Education</option>
+      </select>
+      <select class="sort-sel" id="locSel" onchange="applyFilter()">
+        <option value="">All Locations</option>
+        <option value="Mumbai">Mumbai</option>
+        <option value="Pune">Pune</option>
+        <option value="Nashik">Nashik</option>
+        <option value="Nagpur">Nagpur</option>
+        <option value="Aurangabad">Aurangabad</option>
+        <option value="Maharashtra">Maharashtra</option>
+        <option value="All India">All India</option>
+      </select>
+      <select class="sort-sel" id="sortSel" onchange="applyFilter()">
+        <option value="newest">Newest First</option>
+        <option value="views">Most Viewed</option>
+        <option value="lastdate">By Last Date</option>
+        <option value="title">A to Z</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="badge" id="jobBadge">0</span>
+      <div class="view-tog">
+        <button class="vbtn on" onclick="setView('grid')">▦</button>
+        <button class="vbtn" onclick="setView('list')">☰</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Quick Pills -->
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:24px" id="catPills"></div>
+
+  <!-- Job Grid -->
+  <div class="grid" id="jobGrid">
+    <div class="skel"></div><div class="skel"></div>
+    <div class="skel"></div><div class="skel"></div>
+    <div class="skel"></div><div class="skel"></div>
+  </div>
+
+  <div class="load-wrap">
+    <button class="load-btn" id="loadBtn" onclick="loadMore()" style="display:none">Load More Jobs ↓</button>
+  </div>
+
+</div><!-- /wrap -->
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="f-logo">💼 MyCareerJob.in</a>
+        <p class="f-desc">job portal. Real-time job updates powered by Suraj Molke</p>
+        <p class="f-desc">Website Live From Pune & Nanded</p>
+      </div>
+      <div class="footer-col">
+        <h4>Job Categories</h4>
+        <ul>
+          <li><a href="jobs.html?cat=Govt">Govt Jobs</a></li>
+          <li><a href="jobs.html?cat=IT">IT Jobs</a></li>
+          <li><a href="jobs.html?cat=Bank">AWS DevOps Jobs</a></li>
+          <li><a href="jobs.html?cat=Railway"></a></li>
+          <li><a href="jobs.html?cat=Police"></a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Pages</h4>
+        <ul>
+          <li><a href="marathi.html">मराठी नोकऱ्या</a></li>
+          <li><a href="jobs.html">All Jobs</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="admin/login.html">Admin Login</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Official Sites</h4>
+        <ul>
+          <li><a href="https://mpsc.gov.in" target="_blank">MPSC</a></li>
+          <li><a href="https://mahapolice.gov.in" target="_blank">Maharashtra Police</a></li>
+          <li><a href="https://ibps.in" target="_blank">IBPS</a></li>
+          <li><a href="https://indianrailways.gov.in" target="_blank">Indian Railways</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <h4>© 2026 MyCareerJob.in — All Rights Reserved | Suraj Molke | Built with ❤️ for Maharashtra Job</h4>
+      <p style="margin-top:5px">Disclaimer: Always verify job details on official websites before applying.</p>
+    </div>
+  </div>
+</footer>
+<button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<div id="toast"></div>
+
+<script src="js/supabase.js"></script>
+<script>
+let ALL = [], filtered = [], page = 1;
+const PER = 18;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  initParticles(); initHeader(); initBTT();
+  readURLParams();
+  ALL = await DB.getPublishedJobs(500).catch(() => []);
+  buildCatPills();
+  applyFilter();
+  updateTicker();
+  DB.subscribeJobs(payload => {
+    if (payload.eventType === 'INSERT' && ['published','featured'].includes(payload.new.status)) {
+      ALL.unshift(payload.new); applyFilter(); updateTicker();
+    } else if (payload.eventType === 'UPDATE') {
+      const i = ALL.findIndex(j => j.id === payload.new.id);
+      if (i>=0) {
+        if (['draft','archived','expired'].includes(payload.new.status)) ALL.splice(i,1);
+        else ALL[i] = payload.new;
+        applyFilter();
+      }
+    } else if (payload.eventType === 'DELETE') {
+      ALL = ALL.filter(j => j.id !== payload.old.id); applyFilter();
+    }
+  });
+});
+
+function readURLParams() {
+  const p = new URLSearchParams(location.search);
+  const cat = p.get('cat'); const q = p.get('q'); const loc = p.get('loc');
+  if (cat) { document.getElementById('catSel').value = cat; updateHero(cat); }
+  if (q)   document.getElementById('searchInput').value = q;
+  if (loc) document.getElementById('locSel').value = loc;
+}
+
+function updateHero(cat) {
+  const c = CATS[cat] || {};
+  document.getElementById('heroTitle').textContent = `${c.emoji||''} ${cat} Jobs in Maharashtra`;
+  document.getElementById('heroSub').textContent = `Latest ${cat} job openings — Updated in real-time`;
+}
+
+function buildCatPills() {
+  const counts = {};
+  ALL.forEach(j => counts[j.category] = (counts[j.category]||0)+1);
+  document.getElementById('catPills').innerHTML = Object.keys(CATS).map(cat => {
+    const c = CATS[cat];
+    return `<button onclick="document.getElementById('catSel').value='${cat}';applyFilter()" 
+      style="padding:5px 13px;border-radius:16px;border:1.5px solid var(--border);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;transition:var(--ease);color:${c.color}"
+      onmouseover="this.style.borderColor='${c.color}'" onmouseout="this.style.borderColor='var(--border)'">
+      ${c.emoji} ${cat} (${counts[cat]||0})</button>`;
+  }).join('');
+}
+
+function applyFilter() {
+  const q   = document.getElementById('searchInput').value.toLowerCase().trim();
+  const cat = document.getElementById('catSel').value;
+  const loc = document.getElementById('locSel').value;
+  const srt = document.getElementById('sortSel').value;
+  filtered = ALL.filter(j => {
+    const mq  = !q   || (j.title+j.description+j.organization+'').toLowerCase().includes(q);
+    const mc  = !cat || j.category === cat;
+    const ml  = !loc || (j.location||'').toLowerCase().includes(loc.toLowerCase());
+    return mq && mc && ml;
+  });
+  if (srt==='newest')   filtered.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  else if (srt==='views') filtered.sort((a,b)=>(b.views||0)-(a.views||0));
+  else if (srt==='lastdate') filtered.sort((a,b)=>(a.last_date||'9999').localeCompare(b.last_date||'9999'));
+  else if (srt==='title') filtered.sort((a,b)=>a.title.localeCompare(b.title));
+  page = 1;
+  document.getElementById('jobBadge').textContent = filtered.length;
+  renderPage();
+}
+
+function renderPage(append=false) {
+  const grid = document.getElementById('jobGrid');
+  const start = (page-1)*PER;
+  const slice = filtered.slice(start, start+PER);
+  if (!append) grid.innerHTML='';
+  if (!filtered.length) {
+    grid.innerHTML='<div class="empty"><div class="ei">🔍</div><h3>No jobs found</h3><p>Try different filters</p></div>';
+    document.getElementById('loadBtn').style.display='none';
+    return;
+  }
+  slice.forEach((j,i)=>{
+    const d=document.createElement('div');
+    d.innerHTML=buildCard(j);
+    const card=d.firstElementChild;
+    card.style.animationDelay=`${i*.06}s`;
+    grid.appendChild(card);
+  });
+  document.getElementById('loadBtn').style.display=start+PER<filtered.length?'block':'none';
+}
+
+function loadMore(){page++;renderPage(true);}
+function setView(v){document.getElementById('jobGrid').classList.toggle('list',v==='list');document.querySelectorAll('.vbtn').forEach((b,i)=>b.classList.toggle('on',(i===0&&v==='grid')||(i===1&&v==='list')));}
+
+function buildCard(j){
+  const c=CATS[j.category]||CATS['Other'];
+  return `<div class="card ${j.is_featured||j.status==='featured'?'hot':j.priority==='urgent'?'urgent':''}"
+    style="--c:${c.color}" onclick="location.href='job.html?slug=${j.slug}'">
+    <div class="card-top">
+      <div class="card-logo" style="background:${c.bg}">${c.emoji}</div>
+      <div class="card-meta"><div class="card-title">${h(j.title)}</div><div class="card-org">${h(j.organization||'')}</div></div>
+    </div>
+    <div class="card-tags">
+      <span class="tag" style="background:${c.bg};color:${c.color}">${c.emoji} ${j.category}</span>
+      <span class="tag tag-loc">📍 ${h(j.location||'Maharashtra')}</span>
+      ${j.vacancies?`<span class="tag tag-vac">👥 ${h(j.vacancies)}</span>`:''}
+    </div>
+    <p class="card-desc">${h((j.description||'').slice(0,120))}</p>
+    <div class="card-foot">
+      <span class="card-date ${j.last_date?'urgent':''}">${j.last_date?'⏰ Last: '+h(j.last_date):timeAgo(j.created_at)}</span>
+      <a href="job.html?slug=${j.slug}" class="apply-btn" onclick="event.stopPropagation()">Apply →</a>
+    </div>
+  </div>`;
+}
+
+function updateTicker(){const el=document.getElementById('ticker');if(!el||!ALL.length)return;const s=ALL.slice(0,10).map(j=>`🔔 ${j.title}`).join(' · ');el.textContent=s+' · '+s;}
+function initParticles(){const c=document.getElementById('particles');for(let i=0;i<12;i++){const p=document.createElement('div');p.className='pt';p.style.cssText=`left:${Math.random()*100}%;width:${Math.random()*3+2}px;height:${Math.random()*3+2}px;animation-duration:${Math.random()*14+9}s;animation-delay:${Math.random()*9}s;opacity:.08`;c.appendChild(p);}}
+function initHeader(){window.addEventListener('scroll',()=>document.getElementById('hdr')?.classList.toggle('scrolled',scrollY>20));const hb=document.getElementById('burger');const nav=document.getElementById('nav');hb?.addEventListener('click',()=>{hb.classList.toggle('open');nav?.classList.toggle('open');});nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{hb?.classList.remove('open');nav.classList.remove('open');}));}
+function initBTT(){window.addEventListener('scroll',()=>document.getElementById('btt')?.classList.toggle('show',scrollY>400));}
+</script>
+</body>
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Email Notifications — Admin</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <style>
+    /* Tab system */
+    .tabs{display:flex;gap:4px;background:var(--s2);border-radius:12px;padding:5px;margin-bottom:22px}
+    .tab{flex:1;padding:10px;border-radius:9px;font-size:.85rem;font-weight:600;cursor:pointer;text-align:center;color:var(--mt);transition:var(--ease);border:none;background:none}
+    .tab.on{background:var(--s1);color:var(--txt);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+    .tab-panel{display:none}
+    .tab-panel.on{display:block}
+
+    /* Template editor */
+    .tmpl-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+    .tmpl-card{background:var(--s2);border:1px solid var(--bdr);border-radius:12px;padding:16px;cursor:pointer;transition:var(--ease);display:flex;align-items:center;gap:14px}
+    .tmpl-card:hover{border-color:var(--or)}
+    .tmpl-card.active{border-color:var(--or);background:rgba(255,107,0,.06)}
+    .tmpl-ico{font-size:1.8rem;width:44px;height:44px;background:var(--s3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .tmpl-name{font-weight:700;font-size:.88rem}
+    .tmpl-subject{font-size:.75rem;color:var(--mt);margin-top:2px}
+    .tmpl-badge{margin-left:auto;padding:3px 9px;border-radius:8px;font-size:.68rem;font-weight:700}
+    .tb-on{background:rgba(0,217,126,.12);color:var(--gr)}
+    .tb-off{background:rgba(255,77,109,.1);color:var(--rd)}
+
+    /* Variable chips */
+    .var-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .var-chip{background:var(--s3);border:1px solid var(--bdr);border-radius:7px;padding:3px 10px;font-size:.73rem;font-family:monospace;cursor:pointer;color:var(--ac);transition:var(--ease)}
+    .var-chip:hover{background:rgba(108,99,255,.15);border-color:var(--ac)}
+
+    /* HTML preview toggle */
+    .preview-frame{width:100%;height:480px;border:1px solid var(--bdr);border-radius:10px;background:#fff}
+    .editor-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+    .et-btn{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:5px 11px;font-size:.78rem;color:var(--txt);cursor:pointer;transition:var(--ease)}
+    .et-btn:hover{border-color:var(--or);color:var(--or)}
+    .et-btn.active{border-color:var(--or);color:var(--or);background:rgba(255,107,0,.08)}
+    .html-editor{width:100%;min-height:300px;background:var(--s2);border:1.5px solid var(--bdr);border-radius:10px;padding:13px;color:var(--txt);font-family:monospace;font-size:.8rem;resize:vertical;outline:none;line-height:1.6}
+    .html-editor:focus{border-color:var(--or)}
+
+    /* Queue table */
+    .q-status{padding:3px 9px;border-radius:8px;font-size:.68rem;font-weight:700;white-space:nowrap}
+    .q-pending{background:rgba(243,156,18,.12);color:var(--yw)}
+    .q-sent{background:rgba(0,217,126,.12);color:var(--gr)}
+    .q-failed{background:rgba(255,77,109,.1);color:var(--rd)}
+
+    /* Send Now modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+    .modal-box{background:var(--s1);border:1px solid var(--bdr);border-radius:20px;padding:32px;width:100%;max-width:520px;box-shadow:0 40px 80px rgba(0,0,0,.5)}
+    .modal-title{font-family:var(--head);font-size:1.1rem;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+
+    /* Stats strip */
+    .e-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+    .es{background:var(--s2);border:1px solid var(--bdr);border-radius:12px;padding:14px;text-align:center}
+    .es-val{font-family:var(--head);font-size:1.5rem;font-weight:800;line-height:1}
+    .es-lbl{font-size:.72rem;color:var(--mt);margin-top:4px}
+    .es-or{color:var(--or)}.es-gr{color:var(--gr)}.es-rd{color:var(--rd)}.es-bl{color:#3498DB}.es-yw{color:var(--yw)}
+
+    /* Gmail config section */
+    .cfg-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+    .cfg-row label{font-size:.78rem;font-weight:600;color:var(--mt);width:160px;flex-shrink:0;text-transform:uppercase;letter-spacing:.06em}
+    .cfg-row .fc{flex:1;min-width:200px}
+    .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  </style>
+</head>
+<body>
+<aside class="sb" id="sidebar">
+  <div class="sb-logo"><span class="ico">💼</span><div><div style="font-family:var(--head);font-size:.97rem;font-weight:800">MyCareerJob</div><div style="font-size:.63rem;color:var(--or);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Admin Panel</div></div></div>
+  <div class="sb-sec">MAIN</div>
+  <nav class="sb-nav">
+    <a href="index.html" class="sb-link"><span class="sb-ico">📊</span><span>Dashboard</span></a>
+    <a href="jobs.html" class="sb-link"><span class="sb-ico">💼</span><span>All Jobs</span></a>
+    <a href="add-job.html" class="sb-link"><span class="sb-ico">➕</span><span>Add New Job</span></a>
+    <a href="subscribers.html" class="sb-link"><span class="sb-ico">👥</span><span>Subscribers</span></a>
+    <a href="email.html" class="sb-link on"><span class="sb-ico">📧</span><span>Email Notifications</span></a>
+  </nav>
+  <div class="sb-sec">SETTINGS</div>
+  <nav class="sb-nav">
+    <a href="settings.html" class="sb-link"><span class="sb-ico">⚙️</span><span>Settings</span></a>
+    <a href="../index.html" class="sb-link" target="_blank"><span class="sb-ico">🌐</span><span>View Live Site</span></a>
+    <a href="#" class="sb-link" onclick="adminLogout()"><span class="sb-ico">🚪</span><span>Logout</span></a>
+  </nav>
+  <div class="sb-foot"><div class="av" data-admin-letter>A</div><div><div class="av-name" data-admin-name>Admin</div><div class="av-role" data-admin-role>Admin</div></div><div class="on-dot"></div></div>
+</aside>
+
+<div class="main" id="mainArea">
+  <header class="tb">
+    <div class="tb-left">
+      <button class="sb-tog" onclick="toggleSidebar()">☰</button>
+      <div class="bc"><span>Admin</span><span class="bc-sep">›</span><span class="bc-cur">Email Notifications</span></div>
+    </div>
+    <div class="tb-right">
+      <button onclick="openSendModal()" class="tb-btn">📤 Send Notification Now</button>
+      <div class="av" data-admin-letter>A</div>
+    </div>
+  </header>
+
+  <div class="pg">
+
+    <!-- Email Stats -->
+    <div class="e-stats">
+      <div class="es"><div class="es-val es-yw" id="ePending">—</div><div class="es-lbl">Pending</div></div>
+      <div class="es"><div class="es-val es-gr" id="eSent">—</div><div class="es-lbl">Sent Today</div></div>
+      <div class="es"><div class="es-val es-gr" id="eSentTotal">—</div><div class="es-lbl">Total Sent</div></div>
+      <div class="es"><div class="es-val es-rd" id="eFailed">—</div><div class="es-lbl">Failed</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab on" onclick="switchTab('config')">⚙️ Gmail Config</button>
+      <button class="tab" onclick="switchTab('templates')">📝 Email Templates</button>
+      <button class="tab" onclick="switchTab('queue')">📤 Send Queue</button>
+      <button class="tab" onclick="switchTab('logs')">📋 Email Logs</button>
+    </div>
+
+    <!-- TAB: Gmail Config -->
+    <div class="tab-panel on" id="tab-config">
+      <div class="panel">
+        <div class="ph">
+          <div class="pt">⚙️ Gmail SMTP Configuration</div>
+          <div class="rt-badge" id="smtpStatus"><span class="rt-dot"></span>Not tested</div>
+        </div>
+        <div class="pb">
+
+          <!-- IMPORTANT NOTICE -->
+          <div style="background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:12px;padding:16px;margin-bottom:22px">
+            <h3 style="font-family:var(--head);font-size:.92rem;margin-bottom:8px;color:var(--ac)">📌 Important: Choose an Email Service</h3>
+            <p style="font-size:.82rem;color:var(--mt);line-height:1.7;margin-bottom:8px">
+              Gmail SMTP requires a Supabase Edge Function. Choose one of these FREE services:
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+              <div style="background:var(--s2);border-radius:10px;padding:12px">
+                <div style="font-weight:700;font-size:.82rem;margin-bottom:4px">🟢 Resend</div>
+                <div style="font-size:.74rem;color:var(--mt)">Free: 100 emails/day<br/>resend.com → Get API Key</div>
+              </div>
+              <div style="background:var(--s2);border-radius:10px;padding:12px">
+                <div style="font-weight:700;font-size:.82rem;margin-bottom:4px">🔵 Brevo</div>
+                <div style="font-size:.74rem;color:var(--mt)">Free: 300 emails/day<br/>brevo.com → Get API Key</div>
+              </div>
+              <div style="background:var(--s2);border-radius:10px;padding:12px">
+                <div style="font-weight:700;font-size:.82rem;margin-bottom:4px">🟡 SMTP2GO</div>
+                <div style="font-size:.74rem;color:var(--mt)">Free: 1000 emails/month<br/>smtp2go.com → Get Key</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Config fields -->
+          <div class="cfg-row">
+            <label>From Email</label>
+            <input type="email" class="fc" id="cfgGmailUser" placeholder="mycareerjob@gmail.com"/>
+            <div class="status-dot" id="dotUser" style="background:var(--bdr)"></div>
+          </div>
+          <div class="cfg-row">
+            <label>From Name</label>
+            <input type="text" class="fc" id="cfgFromName" placeholder="MyCareerJob.in"/>
+          </div>
+          <div class="cfg-row">
+            <label>Site URL</label>
+            <input type="url" class="fc" id="cfgSiteUrl" placeholder="https://mycareerjob.in"/>
+          </div>
+          <div class="cfg-row">
+            <label>Unsubscribe URL</label>
+            <input type="url" class="fc" id="cfgUnsubUrl" placeholder="https://mycareerjob.in/unsubscribe.html"/>
+          </div>
+          <div class="cfg-row">
+            <label>Auto Notify</label>
+            <select class="fc" id="cfgAutoNotify" style="flex:0;min-width:200px">
+              <option value="true">✅ Yes — Send email when job published</option>
+              <option value="false">❌ No — Manual sending only</option>
+            </select>
+          </div>
+          <div style="margin-top:18px;padding:14px;background:var(--s2);border-radius:10px;border:1px solid var(--bdr)">
+            <div style="font-size:.78rem;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🔑 API Key Setup (in Supabase Edge Functions)</div>
+            <div style="font-size:.8rem;color:var(--mt);line-height:1.8">
+              After creating the Edge Function, add your API key as a secret:<br/>
+              <code style="background:var(--s3);padding:2px 8px;border-radius:5px;color:var(--ac);font-size:.78rem">supabase secrets set RESEND_API_KEY=re_xxxxx</code><br/>
+              OR<br/>
+              <code style="background:var(--s3);padding:2px 8px;border-radius:5px;color:var(--ac);font-size:.78rem">supabase secrets set BREVO_API_KEY=xkeysib-xxxxx</code>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+            <button class="btn-save" onclick="saveEmailConfig()">💾 Save Configuration</button>
+            <button class="btn-dft" onclick="triggerSendQueue()">📤 Process Queue Now</button>
+            <button class="btn-dft" onclick="testEmailConnection()">🧪 Send Test Email</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Email Templates -->
+    <div class="tab-panel" id="tab-templates">
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start">
+
+        <!-- Template List -->
+        <div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Templates</div>
+          <div class="tmpl-list" id="tmplList">
+            <div class="t-load">Loading...</div>
+          </div>
+          <button class="btn-dft" style="width:100%;margin-top:8px" onclick="createNewTemplate()">+ New Template</button>
+        </div>
+
+        <!-- Template Editor -->
+        <div class="panel" id="tmplEditor" style="display:none">
+          <div class="ph">
+            <div class="pt" id="editorTitle">Edit Template</div>
+            <div style="display:flex;gap:7px">
+              <button onclick="saveTemplate()" class="btn-save" style="padding:7px 14px;font-size:.8rem">💾 Save</button>
+              <button onclick="deleteTemplate()" class="et-btn" style="color:var(--rd);border-color:rgba(255,77,109,.3)">🗑️</button>
+            </div>
+          </div>
+          <div class="pb">
+            <!-- Meta -->
+            <div class="fg">
+              <label class="fl">Template Name <span class="req">*</span></label>
+              <input type="text" class="fc" id="tName" placeholder="e.g. new_job_alert, welcome" oninput="slugifyTmplName()"/>
+              <div style="font-size:.68rem;color:var(--mt);margin-top:3px">Use snake_case. This is the internal identifier.</div>
+            </div>
+            <div class="fg">
+              <label class="fl">Subject Line <span class="req">*</span></label>
+              <input type="text" class="fc" id="tSubject" placeholder="🔔 New {{category}} Job: {{job_title}}"/>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+              <label class="fl" style="margin:0">Status</label>
+              <select class="fc" id="tActive" style="width:160px">
+                <option value="true">✅ Active</option>
+                <option value="false">⏸️ Disabled</option>
+              </select>
+            </div>
+
+            <!-- Available Variables -->
+            <div style="font-size:.76rem;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">
+              Click to insert variable →
+            </div>
+            <div class="var-chips" id="varChips">
+              <span class="var-chip" onclick="insertVar('{{job_title}}')">{{job_title}}</span>
+              <span class="var-chip" onclick="insertVar('{{organization}}')">{{organization}}</span>
+              <span class="var-chip" onclick="insertVar('{{category}}')">{{category}}</span>
+              <span class="var-chip" onclick="insertVar('{{location}}')">{{location}}</span>
+              <span class="var-chip" onclick="insertVar('{{description}}')">{{description}}</span>
+              <span class="var-chip" onclick="insertVar('{{salary}}')">{{salary}}</span>
+              <span class="var-chip" onclick="insertVar('{{vacancies}}')">{{vacancies}}</span>
+              <span class="var-chip" onclick="insertVar('{{last_date}}')">{{last_date}}</span>
+              <span class="var-chip" onclick="insertVar('{{job_url}}')">{{job_url}}</span>
+              <span class="var-chip" onclick="insertVar('{{apply_link}}')">{{apply_link}}</span>
+              <span class="var-chip" onclick="insertVar('{{subscriber_name}}')">{{subscriber_name}}</span>
+              <span class="var-chip" onclick="insertVar('{{subscriber_email}}')">{{subscriber_email}}</span>
+              <span class="var-chip" onclick="insertVar('{{site_url}}')">{{site_url}}</span>
+              <span class="var-chip" onclick="insertVar('{{unsubscribe_url}}')">{{unsubscribe_url}}</span>
+            </div>
+
+            <!-- HTML Body -->
+            <div class="fg" style="margin-top:10px">
+              <div class="editor-toolbar">
+                <span class="fl" style="margin:0">HTML Body</span>
+                <button class="et-btn active" onclick="showHtmlEditor()" id="btnHtml">✏️ HTML Editor</button>
+                <button class="et-btn" onclick="showPreview()" id="btnPrev">👁️ Preview</button>
+              </div>
+              <textarea class="html-editor" id="tHtml" rows="15"
+                placeholder="Paste your HTML email template here...&#10;Use {{job_title}}, {{description}}, etc. as placeholders."></textarea>
+              <iframe class="preview-frame" id="prevFrame" style="display:none"></iframe>
+            </div>
+
+            <!-- Plain text -->
+            <div class="fg">
+              <label class="fl">Plain Text (optional)</label>
+              <textarea class="fc" id="tText" rows="6" placeholder="Plain text version (shown if HTML not supported)..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB: Send Queue -->
+    <div class="tab-panel" id="tab-queue">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <select class="fc" id="qStatusF" onchange="loadQueue()" style="width:160px">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="sent">Sent</option>
+          <option value="failed">Failed</option>
+        </select>
+        <button class="btn-dft" onclick="loadQueue()">🔄 Refresh</button>
+        <button class="btn-save" style="padding:10px 18px" onclick="triggerSendQueue()">▶️ Process Queue</button>
+        <button class="et-btn" onclick="clearSentQueue()" style="color:var(--rd)">🗑️ Clear Sent</button>
+      </div>
+      <div class="panel">
+        <div class="ph"><div class="pt">📤 Email Queue <span class="nb" id="qBadge">0</span></div></div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>To Email</th><th>Subject</th><th>Job</th><th>Status</th><th>Attempts</th><th>Scheduled</th><th>Actions</th></tr></thead>
+            <tbody id="queueTbody"><tr><td colspan="7" class="t-load">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Logs -->
+    <div class="tab-panel" id="tab-logs">
+      <div class="panel">
+        <div class="ph">
+          <div class="pt">📋 Email Logs</div>
+          <button onclick="loadLogs()" class="et-btn">🔄 Refresh</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>To Email</th><th>Subject</th><th>Status</th><th>Sent At</th></tr></thead>
+            <tbody id="logsTbody"><tr><td colspan="4" class="t-load">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pg -->
+</div><!-- /main -->
+
+<!-- Send Notification Modal -->
+<div class="modal-overlay" id="sendModal" style="display:none" onclick="if(event.target===this)closeSendModal()">
+  <div class="modal-box">
+    <div class="modal-title">📤 Send Job Notification</div>
+    <div class="fg">
+      <label class="fl">Select Job to Notify About</label>
+      <select class="fc" id="modalJobSel">
+        <option value="">— Loading jobs... —</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">Email Template</label>
+      <select class="fc" id="modalTmplSel">
+        <option value="">— Loading templates... —</option>
+      </select>
+    </div>
+    <div id="modalPreview" style="background:var(--s2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:.82rem;color:var(--mt)">
+      Select a job and template to see details
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-save" id="modalSendBtn" onclick="doSendNotification()">📤 Queue Emails for All Subscribers</button>
+      <button class="btn-dft" onclick="closeSendModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-c" id="toastContainer"></div>
+<script src="../js/supabase.js"></script>
+<script src="js/core.js"></script>
+<script>
+/* ── State ───────────────────────── */
+let allTemplates = [];
+let activeTmplId = null;
+let allJobs = [];
+
+/* ── Boot ────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  await requireAuth();
+  initShell();
+  await Promise.all([loadEmailStats(), loadTemplates(), loadConfig()]);
+  subscribeQueueRealtime();
+});
+
+/* ── Tab Switch ──────────────────── */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['config','templates','queue','logs'];
+    t.classList.toggle('on', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  if (name === 'queue') loadQueue();
+  if (name === 'logs')  loadLogs();
+}
+
+/* ── Email Stats ─────────────────── */
+async function loadEmailStats() {
+  try {
+    const { data } = await sb.rpc('get_email_stats');
+    if (!data) return;
+    animNum('ePending',   data.total_queued  || 0);
+    animNum('eSent',      data.sent_today    || 0);
+    animNum('eSentTotal', data.total_sent    || 0);
+    animNum('eFailed',    data.total_failed  || 0);
+  } catch(e) { console.error(e); }
+}
+
+/* ── Config ──────────────────────── */
+async function loadConfig() {
+  const { data } = await sb.from('email_settings').select('*');
+  const cfg = {};
+  (data||[]).forEach(r => cfg[r.key] = r.value);
+  document.getElementById('cfgGmailUser').value  = cfg.gmail_user || '';
+  document.getElementById('cfgFromName').value   = cfg.from_name  || 'MyCareerJob.in';
+  document.getElementById('cfgSiteUrl').value    = cfg.site_url   || '';
+  document.getElementById('cfgUnsubUrl').value   = cfg.unsubscribe_url || '';
+  document.getElementById('cfgAutoNotify').value = cfg.auto_notify || 'true';
+}
+
+async function saveEmailConfig() {
+  const updates = [
+    ['gmail_user',      document.getElementById('cfgGmailUser').value.trim()],
+    ['from_name',       document.getElementById('cfgFromName').value.trim()],
+    ['site_url',        document.getElementById('cfgSiteUrl').value.trim()],
+    ['unsubscribe_url', document.getElementById('cfgUnsubUrl').value.trim()],
+    ['auto_notify',     document.getElementById('cfgAutoNotify').value],
+  ];
+  try {
+    for (const [key, value] of updates) {
+      await sb.from('email_settings').upsert({ key, value, updated_at: new Date().toISOString() });
+    }
+    aToast('✅ Email configuration saved!', 'success');
+  } catch(e) { aToast('❌ Save failed: ' + e.message, 'error'); }
+}
+
+async function testEmailConnection() {
+  const email = (await sb.auth.getUser()).data?.user?.email;
+  if (!email) { aToast('Not logged in', 'error'); return; }
+  aToast(`🧪 Test email queued to ${email} — Process queue to send`, 'info');
+  // Queue a test email
+  const subj  = '🧪 Test Email — MyCareerJob.in';
+  const html  = `<h2>Test Email</h2><p>Your email configuration is working! This is a test from MyCareerJob.in admin panel.</p>`;
+  await sb.from('email_queue').insert({ to_email: email, subject: subj, html_body: html, text_body: 'Test email from MyCareerJob.in', status: 'pending' });
+  await triggerSendQueue();
+}
+
+/* ── Templates ───────────────────── */
+async function loadTemplates() {
+  const { data } = await sb.from('email_templates').select('*').order('created_at');
+  allTemplates = data || [];
+  renderTemplateList();
+}
+
+function renderTemplateList() {
+  const el = document.getElementById('tmplList');
+  if (!allTemplates.length) { el.innerHTML = '<div style="color:var(--mt);font-size:.85rem;text-align:center;padding:20px">No templates yet</div>'; return; }
+  el.innerHTML = allTemplates.map(t => `
+    <div class="tmpl-card ${activeTmplId===t.id?'active':''}" onclick="selectTemplate('${t.id}')">
+      <div class="tmpl-ico">${t.name.includes('welcome')?'👋':'🔔'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="tmpl-name">${h(t.name)}</div>
+        <div class="tmpl-subject">${h(t.subject.slice(0,55))}${t.subject.length>55?'…':''}</div>
+      </div>
+      <span class="tmpl-badge ${t.is_active?'tb-on':'tb-off'}">${t.is_active?'Active':'Off'}</span>
+    </div>`).join('');
+}
+
+function selectTemplate(id) {
+  activeTmplId = id;
+  const t = allTemplates.find(x => x.id === id);
+  if (!t) return;
+  renderTemplateList();
+  document.getElementById('tmplEditor').style.display = 'block';
+  document.getElementById('editorTitle').textContent = 'Edit: ' + t.name;
+  document.getElementById('tName').value    = t.name;
+  document.getElementById('tSubject').value = t.subject;
+  document.getElementById('tActive').value  = String(t.is_active);
+  document.getElementById('tHtml').value    = t.html_body;
+  document.getElementById('tText').value    = t.text_body || '';
+  showHtmlEditor();
+}
+
+function createNewTemplate() {
+  activeTmplId = null;
+  renderTemplateList();
+  document.getElementById('tmplEditor').style.display = 'block';
+  document.getElementById('editorTitle').textContent = 'New Template';
+  document.getElementById('tName').value = '';
+  document.getElementById('tSubject').value = '';
+  document.getElementById('tActive').value = 'true';
+  document.getElementById('tHtml').value = '';
+  document.getElementById('tText').value = '';
+}
+
+async function saveTemplate() {
+  const name    = document.getElementById('tName').value.trim();
+  const subject = document.getElementById('tSubject').value.trim();
+  const html    = document.getElementById('tHtml').value.trim();
+  const text    = document.getElementById('tText').value.trim();
+  const active  = document.getElementById('tActive').value === 'true';
+  if (!name || !subject || !html) { aToast('❌ Name, Subject and HTML are required', 'error'); return; }
+  try {
+    if (activeTmplId) {
+      await sb.from('email_templates').update({ name, subject, html_body: html, text_body: text || null, is_active: active, updated_at: new Date().toISOString() }).eq('id', activeTmplId);
+      aToast('✅ Template updated!', 'success');
+    } else {
+      await sb.from('email_templates').insert({ name, subject, html_body: html, text_body: text || null, is_active: active });
+      aToast('✅ Template created!', 'success');
+    }
+    await loadTemplates();
+  } catch(e) { aToast('❌ ' + e.message, 'error'); }
+}
+
+async function deleteTemplate() {
+  if (!activeTmplId) return;
+  if (!confirm('Delete this template?')) return;
+  await sb.from('email_templates').delete().eq('id', activeTmplId);
+  activeTmplId = null;
+  document.getElementById('tmplEditor').style.display = 'none';
+  await loadTemplates();
+  aToast('🗑️ Template deleted', 'success');
+}
+
+function slugifyTmplName() {
+  const el = document.getElementById('tName');
+  el.value = el.value.toLowerCase().replace(/[^a-z0-9_]/g,'_').replace(/__+/g,'_');
+}
+
+function insertVar(v) {
+  const area = document.getElementById('tHtml');
+  const start = area.selectionStart || area.value.length;
+  area.value = area.value.slice(0, start) + v + area.value.slice(start);
+  area.focus();
+  area.setSelectionRange(start + v.length, start + v.length);
+}
+
+function showHtmlEditor() {
+  document.getElementById('tHtml').style.display = 'block';
+  document.getElementById('prevFrame').style.display = 'none';
+  document.getElementById('btnHtml').classList.add('active');
+  document.getElementById('btnPrev').classList.remove('active');
+}
+
+function showPreview() {
+  const html = document.getElementById('tHtml').value
+    .replace(/\{\{[^}]+\}\}/g, m => `<span style="background:#fff3cd;color:#92400e;padding:1px 4px;border-radius:3px;font-size:.85em">${m}</span>`);
+  const frame = document.getElementById('prevFrame');
+  frame.style.display = 'block';
+  document.getElementById('tHtml').style.display = 'none';
+  document.getElementById('btnHtml').classList.remove('active');
+  document.getElementById('btnPrev').classList.add('active');
+  frame.srcdoc = html;
+}
+
+/* ── Queue ───────────────────────── */
+async function loadQueue() {
+  const status = document.getElementById('qStatusF').value;
+  let q = sb.from('email_queue').select('*').order('created_at', { ascending: false }).limit(100);
+  if (status) q = q.eq('status', status);
+  const { data } = await q;
+  document.getElementById('qBadge').textContent = (data||[]).length;
+  const tbody = document.getElementById('queueTbody');
+  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" class="t-empty">No emails in queue</td></tr>'; return; }
+  tbody.innerHTML = data.map(e => `
+    <tr>
+      <td style="font-size:.82rem">${h(e.to_email)}</td>
+      <td style="font-size:.78rem;color:var(--mt)">${h((e.subject||'').slice(0,45))}${(e.subject||'').length>45?'…':''}</td>
+      <td style="font-size:.75rem;color:var(--mt)">${e.job_id?e.job_id.slice(0,8)+'…':'—'}</td>
+      <td><span class="q-status q-${e.status}">${e.status}</span></td>
+      <td style="font-size:.78rem;color:var(--mt);text-align:center">${e.attempts||0}</td>
+      <td style="font-size:.75rem;color:var(--mt)">${fmtDate(e.scheduled_at)}</td>
+      <td><div class="ra">
+        ${e.status==='failed'?`<button onclick="retryEmail('${e.id}')" class="rb grn" title="Retry">🔄</button>`:''}
+        <button onclick="delQueueItem('${e.id}')" class="rb del" title="Delete">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+async function retryEmail(id) {
+  await sb.from('email_queue').update({ status: 'pending', attempts: 0, error_msg: null }).eq('id', id);
+  aToast('🔄 Email queued for retry', 'success');
+  loadQueue();
+}
+
+async function delQueueItem(id) {
+  await sb.from('email_queue').delete().eq('id', id);
+  aToast('🗑️ Removed from queue', 'success');
+  loadQueue();
+}
+
+async function clearSentQueue() {
+  if (!confirm('Delete all sent emails from queue?')) return;
+  await sb.from('email_queue').delete().eq('status', 'sent');
+  aToast('🗑️ Sent emails cleared', 'success');
+  loadQueue();
+}
+
+/* ── Logs ────────────────────────── */
+async function loadLogs() {
+  const { data } = await sb.from('email_logs').select('*').order('created_at', { ascending: false }).limit(100);
+  const tbody = document.getElementById('logsTbody');
+  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="4" class="t-empty">No email logs yet</td></tr>'; return; }
+  tbody.innerHTML = data.map(l => `
+    <tr>
+      <td style="font-size:.82rem">${h(l.to_email)}</td>
+      <td style="font-size:.78rem;color:var(--mt)">${h((l.subject||'').slice(0,55))}</td>
+      <td><span class="q-status q-${l.status}">${l.status}</span></td>
+      <td style="font-size:.75rem;color:var(--mt)">${fmtDate(l.created_at)}</td>
+    </tr>`).join('');
+}
+
+/* ── Send Notification Modal ─────── */
+async function openSendModal() {
+  document.getElementById('sendModal').style.display = 'flex';
+  // Load jobs and templates
+  const [{ data: jobs }, { data: tmpls }] = await Promise.all([
+    sb.from('jobs').select('id,title,category,slug').in('status',['published','featured']).order('created_at',{ascending:false}).limit(50),
+    sb.from('email_templates').select('id,name,subject').eq('is_active',true),
+  ]);
+  allJobs = jobs || [];
+  allTemplates = (tmpls||[]);
+
+  document.getElementById('modalJobSel').innerHTML =
+    '<option value="">— Select a Job —</option>' +
+    allJobs.map(j => `<option value="${j.id}">${h(j.title.slice(0,60))} [${j.category}]</option>`).join('');
+
+  document.getElementById('modalTmplSel').innerHTML =
+    allTemplates.map(t => `<option value="${t.id}">${h(t.name)} — ${h(t.subject.slice(0,40))}</option>`).join('');
+
+  document.getElementById('modalJobSel').addEventListener('change', updateModalPreview);
+  document.getElementById('modalTmplSel').addEventListener('change', updateModalPreview);
+}
+
+async function updateModalPreview() {
+  const jobId  = document.getElementById('modalJobSel').value;
+  const job    = allJobs.find(j => j.id === jobId);
+  if (!job) return;
+
+  // Count matching subscribers
+  const { count } = await sb.from('subscribers')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true)
+    .or(`category_pref.eq.all,category_pref.eq.${job.category}`);
+
+  document.getElementById('modalPreview').innerHTML = `
+    <div style="font-weight:700;font-size:.9rem;margin-bottom:6px">${h(job.title)}</div>
+    <div style="display:flex;gap:10px;font-size:.78rem">
+      <span style="background:rgba(0,217,126,.12);color:var(--gr);padding:2px 8px;border-radius:6px">📧 ${count||0} subscribers will receive this</span>
+      <span style="background:rgba(108,99,255,.12);color:var(--ac);padding:2px 8px;border-radius:6px">📂 ${h(job.category)}</span>
+    </div>`;
+}
+
+async function doSendNotification() {
+  const jobId  = document.getElementById('modalJobSel').value;
+  const tmplId = document.getElementById('modalTmplSel').value;
+  if (!jobId)  { aToast('❌ Select a job', 'error'); return; }
+  if (!tmplId) { aToast('❌ Select a template', 'error'); return; }
+
+  const btn = document.getElementById('modalSendBtn');
+  btn.disabled = true; btn.textContent = '⏳ Queuing emails...';
+
+  try {
+    // Call Supabase function to queue emails
+    const { data, error } = await sb.rpc('queue_job_notification', {
+      p_job_id: jobId,
+      p_template_id: tmplId,
+    });
+    if (error) throw error;
+
+    aToast(`✅ ${data} emails queued! Processing...`, 'success');
+    closeSendModal();
+    await triggerSendQueue();
+    await loadEmailStats();
+  } catch(e) {
+    aToast('❌ ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📤 Queue Emails for All Subscribers';
+  }
+}
+
+function closeSendModal() { document.getElementById('sendModal').style.display = 'none'; }
+
+/* ── Trigger Edge Function to Send ── */
+async function triggerSendQueue() {
+  aToast('📤 Processing email queue...', 'info');
+  try {
+    const { data, error } = await sb.functions.invoke('send-emails', { body: {} });
+    if (error) throw error;
+    const r = data || {};
+    if (r.sent > 0)  aToast(`✅ Sent ${r.sent} emails!`, 'success');
+    if (r.failed > 0) aToast(`⚠️ ${r.failed} emails failed — check logs`, 'error');
+    if (!r.sent && !r.failed) aToast('📭 No pending emails to send', 'info');
+    await loadEmailStats();
+    if (document.getElementById('tab-queue').classList.contains('on')) loadQueue();
+  } catch(e) {
+    // Edge function not deployed yet - show instructions
+    aToast('⚠️ Edge Function not deployed yet. See setup guide.', 'error');
+    console.warn('Edge Function error:', e.message);
+    console.info('Deploy the Edge Function first: supabase functions deploy send-emails');
+  }
+}
+
+/* ── Realtime Queue Updates ──────── */
+function subscribeQueueRealtime() {
+  sb.channel('email-queue-ch')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'email_queue' }, async () => {
+      await loadEmailStats();
+      if (document.getElementById('tab-queue').classList.contains('on')) loadQueue();
+    })
+    .subscribe();
+}
+</script>
+</body>
+</html>

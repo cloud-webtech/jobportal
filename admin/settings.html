@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Settings — Admin</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <style>
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media(max-width:768px){.sg{grid-template-columns:1fr}}
+    .form-sec{background:var(--s1);border:1px solid var(--bdr);border-radius:16px;padding:24px;position:relative;overflow:hidden}
+    .form-sec::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--or),var(--ac))}
+    .form-sec-title{font-family:var(--head);font-size:.95rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .tog-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+    .tog-row:last-child{border-bottom:none;padding-bottom:0}
+    .tog-lbl{font-size:.88rem;font-weight:500}
+    .tog-desc{font-size:.74rem;color:var(--mt);margin-top:2px}
+    .tog{position:relative;width:42px;height:23px;flex-shrink:0}
+    .tog input{opacity:0;width:0;height:0}
+    .tog-sl{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:23px;cursor:pointer;transition:.3s}
+    .tog-sl::before{content:'';position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;left:3px;top:3px;transition:.3s}
+    input:checked+.tog-sl{background:linear-gradient(135deg,var(--or),var(--or2))}
+    input:checked+.tog-sl::before{transform:translateX(19px)}
+    .dz{background:rgba(255,77,109,.05);border:1px solid rgba(255,77,109,.18);border-radius:16px;padding:20px;margin-top:18px}
+    .dz h3{color:var(--rd);font-family:var(--head);margin-bottom:12px}
+    .dz-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,77,109,.1)}
+    .dz-row:last-child{border-bottom:none}
+    .dz-lbl{font-size:.87rem;font-weight:500}
+    .dz-desc{font-size:.74rem;color:var(--mt);margin-top:2px}
+    .dz-btn{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.25);border-radius:8px;padding:7px 14px;color:var(--rd);font-size:.78rem;cursor:pointer;transition:var(--ease)}
+    .dz-btn:hover{background:rgba(255,77,109,.2)}
+    .pw-form{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  </style>
+</head>
+<body>
+<aside class="sb" id="sidebar">
+  <div class="sb-logo"><span class="ico">💼</span><div><div style="font-family:var(--head);font-size:.97rem;font-weight:800">MyCareerJob</div><div style="font-size:.63rem;color:var(--or);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Admin Panel</div></div></div>
+  <div class="sb-sec">MAIN</div>
+  <nav class="sb-nav">
+    <a href="index.html" class="sb-link"><span class="sb-ico">📊</span><span>Dashboard</span></a>
+    <a href="jobs.html" class="sb-link"><span class="sb-ico">💼</span><span>All Jobs</span></a>
+    <a href="add-job.html" class="sb-link"><span class="sb-ico">➕</span><span>Add New Job</span></a>
+    <a href="subscribers.html" class="sb-link"><span class="sb-ico">👥</span><span>Subscribers</span></a>
+  </nav>
+  <div class="sb-sec">SETTINGS</div>
+  <nav class="sb-nav">
+    <a href="settings.html" class="sb-link on"><span class="sb-ico">⚙️</span><span>Settings</span></a>
+    <a href="../index.html" class="sb-link" target="_blank"><span class="sb-ico">🌐</span><span>View Live Site</span></a>
+    <a href="#" class="sb-link" onclick="adminLogout()"><span class="sb-ico">🚪</span><span>Logout</span></a>
+  </nav>
+  <div class="sb-foot"><div class="av" data-admin-letter>A</div><div><div class="av-name" data-admin-name>Admin</div><div class="av-role" data-admin-role>Admin</div></div><div class="on-dot"></div></div>
+</aside>
+
+<div class="main" id="mainArea">
+  <header class="tb">
+    <div class="tb-left">
+      <button class="sb-tog" onclick="toggleSidebar()">☰</button>
+      <div class="bc"><span>Admin</span><span class="bc-sep">›</span><span class="bc-cur">Settings</span></div>
+    </div>
+    <div class="tb-right"><div class="av" data-admin-letter>A</div></div>
+  </header>
+  <div class="pg">
+    <div class="sg">
+
+      <!-- Site Settings -->
+      <div class="form-sec">
+        <div class="form-sec-title">🌐 Site Settings</div>
+        <div class="fg"><label class="fl">Site Name</label><input type="text" class="fc" id="sSiteName" placeholder="MyCareerJob.in"/></div>
+        <div class="fg"><label class="fl">Site Tagline</label><input type="text" class="fc" id="sSiteTag" placeholder="Maharashtra No.1 Job Portal"/></div>
+        <div class="fg"><label class="fl">Site URL</label><input type="url" class="fc" id="sSiteUrl" placeholder="https://mycareerjob.in"/></div>
+        <button class="btn-save" style="margin-top:6px" onclick="saveSiteSettings()">💾 Save Site Settings</button>
+      </div>
+
+      <!-- Analytics & Ads -->
+      <div class="form-sec">
+        <div class="form-sec-title">📊 Analytics &amp; Monetization</div>
+        <div class="fg"><label class="fl">Google Analytics ID</label><input type="text" class="fc" id="sGAId" placeholder="G-XXXXXXXXXX"/></div>
+        <div class="fg"><label class="fl">AdSense Publisher ID</label><input type="text" class="fc" id="sAdsense" placeholder="ca-pub-XXXXXXXXXX"/></div>
+        <div class="fg"><label class="fl">Contact Email</label><input type="email" class="fc" id="sEmail" placeholder="admin@mycareerjob.in"/></div>
+        <button class="btn-save" style="margin-top:6px" onclick="saveAnalytics()">💾 Save Analytics</button>
+      </div>
+
+      <!-- Change Password -->
+      <div class="form-sec">
+        <div class="form-sec-title">🔒 Change Admin Password</div>
+        <div class="pw-form">
+          <div class="fg" style="margin-bottom:0"><label class="fl">New Password</label><input type="password" class="fc" id="newPw" placeholder="Min 8 characters"/></div>
+          <div class="fg" style="margin-bottom:0"><label class="fl">Confirm Password</label><input type="password" class="fc" id="confPw" placeholder="Repeat new password"/></div>
+          <button class="btn-save" onclick="changePassword()" style="margin-top:4px">🔒 Update Password</button>
+        </div>
+      </div>
+
+      <!-- Feature Toggles -->
+      <div class="form-sec">
+        <div class="form-sec-title">🔧 Feature Toggles</div>
+        <div class="tog-row">
+          <div><div class="tog-lbl">Marathi Page</div><div class="tog-desc">Show मराठी link in navigation</div></div>
+          <label class="tog"><input type="checkbox" id="togMr" checked/><span class="tog-sl"></span></label>
+        </div>
+        <div class="tog-row">
+          <div><div class="tog-lbl">Email Subscriptions</div><div class="tog-desc">Show subscribe form on homepage</div></div>
+          <label class="tog"><input type="checkbox" id="togSub" checked/><span class="tog-sl"></span></label>
+        </div>
+        <div class="tog-row">
+          <div><div class="tog-lbl">Featured Jobs Section</div><div class="tog-desc">Show "Featured Jobs" on homepage</div></div>
+          <label class="tog"><input type="checkbox" id="togFeat" checked/><span class="tog-sl"></span></label>
+        </div>
+        <div class="tog-row">
+          <div><div class="tog-lbl">Ad Banner Display</div><div class="tog-desc">Show AdSense ad banner slots</div></div>
+          <label class="tog"><input type="checkbox" id="togAd"/><span class="tog-sl"></span></label>
+        </div>
+        <button class="btn-save" style="margin-top:14px" onclick="saveToggles()">💾 Save Toggles</button>
+      </div>
+
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="dz">
+      <h3>⚠️ Danger Zone</h3>
+      <div class="dz-row">
+        <div><div class="dz-lbl">Export All Jobs (JSON)</div><div class="dz-desc">Download complete backup of all job data</div></div>
+        <button class="dz-btn" onclick="exportAllJSON()">📦 Export JSON</button>
+      </div>
+      <div class="dz-row">
+        <div><div class="dz-lbl">Export All Jobs (CSV)</div><div class="dz-desc">Download all jobs as spreadsheet</div></div>
+        <button class="dz-btn" onclick="exportAllCSV()">📊 Export CSV</button>
+      </div>
+      <div class="dz-row">
+        <div><div class="dz-lbl">Clear All Draft Jobs</div><div class="dz-desc">Permanently delete all draft (unpublished) jobs</div></div>
+        <button class="dz-btn" onclick="clearDrafts()">🗑️ Clear Drafts</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-c" id="toastContainer"></div>
+<script src="../js/supabase.js"></script>
+<script src="js/core.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',async()=>{
+  await requireAuth(); initShell();
+  await loadSettings();
+});
+
+async function loadSettings(){
+  try{
+    const s=await DB.getSettings();
+    document.getElementById('sSiteName').value=s.site_name||'MyCareerJob.in';
+    document.getElementById('sSiteTag').value=s.site_tagline||'';
+    document.getElementById('sSiteUrl').value=s.site_url||'';
+    document.getElementById('sGAId').value=s.ga_id||'';
+    document.getElementById('sAdsense').value=s.adsense_id||'';
+    document.getElementById('sEmail').value=s.contact_email||'';
+  }catch(e){aToast('Could not load settings','error');}
+}
+
+async function saveSiteSettings(){
+  try{
+    await DB.saveSetting('site_name', document.getElementById('sSiteName').value);
+    await DB.saveSetting('site_tagline', document.getElementById('sSiteTag').value);
+    await DB.saveSetting('site_url', document.getElementById('sSiteUrl').value);
+    aToast('✅ Site settings saved!','success');
+  }catch{aToast('❌ Save failed','error');}
+}
+
+async function saveAnalytics(){
+  try{
+    await DB.saveSetting('ga_id', document.getElementById('sGAId').value);
+    await DB.saveSetting('adsense_id', document.getElementById('sAdsense').value);
+    await DB.saveSetting('contact_email', document.getElementById('sEmail').value);
+    aToast('✅ Analytics settings saved!','success');
+  }catch{aToast('❌ Save failed','error');}
+}
+
+async function changePassword(){
+  const np=document.getElementById('newPw').value;
+  const cp=document.getElementById('confPw').value;
+  if(np.length<8){aToast('❌ Password must be 8+ characters','error');return;}
+  if(np!==cp){aToast('❌ Passwords do not match','error');return;}
+  const{error}=await sb.auth.updateUser({password:np});
+  if(error){aToast('❌ '+error.message,'error');return;}
+  aToast('✅ Password updated successfully!','success');
+  document.getElementById('newPw').value='';document.getElementById('confPw').value='';
+}
+
+function saveToggles(){aToast('✅ Toggles saved!','success');}
+
+async function exportAllJSON(){
+  const d=await DB.getAllJobs().catch(()=>[]);
+  const blob=new Blob([JSON.stringify({lastUpdated:new Date().toISOString(),totalJobs:d.length,jobs:d},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mycareerjob-backup-'+new Date().toISOString().split('T')[0]+'.json';a.click();
+  aToast('📦 JSON exported!','success');
+}
+
+async function exportAllCSV(){
+  const d=await DB.getAllJobs().catch(()=>[]);
+  const hdr='Title,Category,Location,Status,Organization,LastDate,ApplyLink,Views,Created\n';
+  const rows=d.map(j=>`"${j.title}","${j.category}","${j.location}","${j.status}","${j.organization||''}","${j.last_date||''}","${j.apply_link||''}","${j.views||0}","${j.created_at}"`).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));a.download='jobs.csv';a.click();
+  aToast('📊 CSV exported!','success');
+}
+
+async function clearDrafts(){
+  if(!confirm('Delete ALL draft jobs permanently?'))return;
+  const{error}=await sb.from('jobs').delete().eq('status','draft');
+  if(error){aToast('❌ Failed: '+error.message,'error');return;}
+  aToast('🗑️ All draft jobs deleted','success');
+}
+</script>
+</body>
+</html>

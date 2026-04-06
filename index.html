@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>MyCareerJob.in — Latest Govt & Private Jobs in Maharashtra 2025</title>
+  <meta name="description" content="Find latest government and private jobs in Maharashtra. MPSC, Police Bharti, Bank Jobs, IT Jobs, Railway Jobs — updated live on MyCareerJob.in"/>
+  <meta name="keywords" content="Maharashtra jobs, sarkari naukri, govt jobs 2025, MPSC, police bharti, bank jobs, IT jobs Pune"/>
+  <link rel="canonical" href="https://mycareerjob.in/"/>
+  <meta property="og:title" content="MyCareerJob.in — Maharashtra No.1 Job Portal"/>
+  <meta property="og:description" content="Real-time govt and private job alerts for Maharashtra"/>
+  <meta property="og:url" content="https://mycareerjob.in/"/>
+  <meta property="og:type" content="website"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"MyCareerJob.in","url":"https://mycareerjob.in","description":"Latest Jobs in Maharashtra","potentialAction":{"@type":"SearchAction","target":"https://mycareerjob.in/jobs.html?q={search_term_string}","query-input":"required name=search_term_string"}}</script>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<!-- HEADER -->
+<header class="hdr" id="hdr">
+  <div class="hdr-inner">
+    <a href="index.html" class="logo"><span class="logo-ico">💼</span>MyCareerJob<span>.in</span></a>
+    <nav class="nav" id="nav">
+      <a href="index.html" class="active">Home</a>
+      <a href="jobs.html?cat=Govt">Govt Jobs</a>
+      <a href="jobs.html?cat=IT">IT Jobs</a>
+      <a href="jobs.html?cat=Bank">Bank Jobs</a>
+      <a href="jobs.html?cat=Railway">Railway</a>
+      <a href="marathi.html">मराठी</a>
+      <a href="#alerts" class="cta">🔔 Alerts</a>
+    </nav>
+    <button class="burger" id="burger"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="hero-inner">
+    <div class="hero-badge fade-up">New Job Portal — Real-Time Updates</div>
+    <h1 class="fade-up d1">Find Your Dream<br/><em>Career Today</em></h1>
+    <p class="fade-up d2">IT Jobs &amp; Government Jobs — Instantly Updated New Openings</p>
+    <div class="search-box fade-up d3">
+      <span style="font-size:1.1rem;margin-right:8px;color:#9ca3af">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search by title, company, location..." autocomplete="off"/>
+      <button onclick="goSearch()">Search Jobs</button>
+    </div>
+    <div class="quick-tags fade-up d4">
+      <span onclick="goSearch('Govt')">🏛️ Govt</span>
+      <span onclick="goSearch('IT')">💻 IT</span>
+      <span onclick="goSearch('Bank')">🏦 Bank</span>
+      <span onclick="goSearch('Railway')">🚂 Railway</span>
+      <span onclick="goSearch('Police')">👮 Police</span>
+      <span onclick="goSearch('Defence')">🎖️ Defence</span>
+    </div>
+  </div>
+  <div class="hero-stats fade-up d5">
+    <div class="stat"><strong id="sTotal">—</strong><span>Live Jobs</span></div>
+    <div class="stat-div"></div>
+    <div class="stat"><strong id="sViews">—</strong><span>Total Views</span></div>
+    <div class="stat-div"></div>
+    <div class="stat"><strong id="sSubs">—</strong><span>Subscribers</span></div>
+  </div>
+  <div class="live-badge fade-up d5">
+    <span class="live-dot"></span> New Feature Update Soon
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-label">🔴 LIVE</div>
+  <div class="ticker-track"><div class="ticker-inner" id="ticker">Loading job alerts...</div></div>
+</div>
+
+<!-- MAIN -->
+<div class="wrap">
+
+  <!-- Controls -->
+  <div class="filters scroll-reveal">
+    <div class="filter-btns" id="filterBtns">
+      <button class="fbtn on" onclick="filterCat('All',this)">All Jobs</button>
+      <button class="fbtn" onclick="filterCat('Govt',this)">🏛️ Govt</button>
+      <button class="fbtn" onclick="filterCat('IT',this)">💻 IT</button>
+      <button class="fbtn" onclick="filterCat('Bank',this)">🏦 Bank</button>
+      <button class="fbtn" onclick="filterCat('Railway',this)">🚂 Railway</button>
+      <button class="fbtn" onclick="filterCat('Police',this)">👮 Police</button>
+    </div>
+    <select class="sort-sel" id="sortSel" onchange="doSort()">
+      <option value="newest">Latest First</option>
+      <option value="views">Most Viewed</option>
+      <option value="lastdate">By Last Date</option>
+    </select>
+  </div>
+
+  <!-- Featured -->
+  <section class="sec scroll-reveal">
+    <div class="sec-hdr">
+      <h2 class="sec-title"><span class="dot"></span>New Jobs</h2>
+      <a href="jobs.html?featured=1" class="see-all">View All →</a>
+    </div>
+    <div class="grid" id="featGrid">
+      <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+    </div>
+  </section>
+
+  <!-- Ad Slot -->
+  <div class="ad-slot scroll-reveal">
+    📢 Advertisement Space — <a href="admin/index.html" style="color:var(--orange)">Admin Panel</a>
+  </div>
+
+  <!-- Categories -->
+  <section class="sec scroll-reveal">
+    <div class="sec-hdr"><h2 class="sec-title"><span class="dot"></span>Browse by Category</h2></div>
+    <div class="cat-grid" id="catGrid">
+      <div class="skel" style="height:80px"></div>
+      <div class="skel" style="height:80px"></div>
+      <div class="skel" style="height:80px"></div>
+    </div>
+  </section>
+
+  <!-- All Jobs -->
+  <section class="sec scroll-reveal" id="all-jobs">
+    <div class="sec-hdr">
+      <h2 class="sec-title"><span class="dot"></span>All Jobs <span class="badge" id="jobBadge">0</span></h2>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="view-tog">
+          <button class="vbtn on" onclick="setView('grid')" title="Grid">▦</button>
+          <button class="vbtn" onclick="setView('list')" title="List">☰</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid" id="jobGrid">
+      <div class="skel"></div><div class="skel"></div>
+      <div class="skel"></div><div class="skel"></div>
+      <div class="skel"></div><div class="skel"></div>
+    </div>
+    <div class="load-wrap">
+      <button class="load-btn" id="loadBtn" onclick="loadMore()" style="display:none">Load More Jobs ↓</button>
+    </div>
+  </section>
+
+  <!-- Subscribe -->
+  <section class="sub-sec scroll-reveal" id="alerts">
+    <h2>📧 Get Free Job Alerts</h2>
+    <p>Subscribe and get latest Maharashtra jobs straight to your inbox every day!</p>
+    <form class="sub-form" onsubmit="doSubscribe(event)">
+      <input type="text" id="subName" placeholder="Your name (optional)"/>
+      <input type="email" id="subEmail" placeholder="Enter your email" required/>
+      <select id="subCat">
+        <option value="all">All Jobs</option>
+        <option value="Govt">Govt Only</option>
+        <option value="IT">IT Only</option>
+        <option value="Bank">Bank Only</option>
+        <option value="Railway">Railway Only</option>
+      </select>
+      <button type="submit" class="sub-btn">Subscribe Free 🔔</button>
+    </form>
+    <p class="sub-note">✅ No spam. Unsubscribe anytime. 50,000+ subscribers trust us.</p>
+  </section>
+
+  <!-- Locations -->
+  <section class="sec scroll-reveal">
+    <div class="sec-hdr"><h2 class="sec-title"><span class="dot"></span>Jobs by Location</h2></div>
+    <div class="loc-grid">
+      <a class="loc-tag" href="jobs.html?loc=Mumbai">Mumbai</a>
+      <a class="loc-tag" href="jobs.html?loc=Pune">Pune</a>
+      <a class="loc-tag" href="jobs.html?loc=Nashik">Nashik</a>
+      <a class="loc-tag" href="jobs.html?loc=Nagpur">Nagpur</a>
+      <a class="loc-tag" href="jobs.html?loc=Aurangabad">Aurangabad</a>
+      <a class="loc-tag" href="jobs.html?loc=Solapur">Solapur</a>
+      <a class="loc-tag" href="jobs.html?loc=Kolhapur">Kolhapur</a>
+      <a class="loc-tag" href="jobs.html?loc=Thane">Thane</a>
+      <a class="loc-tag" href="jobs.html?loc=Sangli">Sangli</a>
+      <a class="loc-tag" href="jobs.html?loc=Satara">Satara</a>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="f-logo">💼 MyCareerJob.in</a>
+        <p class="f-desc">job portal. Real-time job updates powered by Suraj Molke</p>
+        <p class="f-desc">Website Live From Pune & Nanded</p>
+      </div>
+      <div class="footer-col">
+        <h4>Job Categories</h4>
+        <ul>
+          <li><a href="jobs.html?cat=Govt">Govt Jobs</a></li>
+          <li><a href="jobs.html?cat=IT">IT Jobs</a></li>
+          <li><a href="jobs.html?cat=Bank">AWS DevOps Jobs</a></li>
+          <li><a href="jobs.html?cat=Railway"></a></li>
+          <li><a href="jobs.html?cat=Police"></a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Pages</h4>
+        <ul>
+          <li><a href="marathi.html">मराठी नोकऱ्या</a></li>
+          <li><a href="jobs.html">All Jobs</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="admin/login.html">Admin Login</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Official Sites</h4>
+        <ul>
+          <li><a href="https://mpsc.gov.in" target="_blank">MPSC</a></li>
+          <li><a href="https://mahapolice.gov.in" target="_blank">Maharashtra Police</a></li>
+          <li><a href="https://ibps.in" target="_blank">IBPS</a></li>
+          <li><a href="https://indianrailways.gov.in" target="_blank">Indian Railways</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <h4>© 2026 MyCareerJob.in — All Rights Reserved | Suraj Molke | Built with ❤️ for Maharashtra Job</h4>
+      <p style="margin-top:5px">Disclaimer: Always verify job details on official websites before applying.</p>
+    </div>
+  </div>
+</footer>
+
+<button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<div id="toast"></div>
+
+<script src="js/supabase.js"></script>
+<script>
+/* ── State ─────────────────────────────── */
+let ALL = [], filtered = [], page = 1, curCat = 'All', view = 'grid';
+const PER = 12;
+
+/* ── Boot ─────────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  initParticles(); initHeader(); initScroll(); initBTT();
+  await loadJobs();
+  subscribeRealtime();
+});
+
+/* ── Load jobs ────────────────────────── */
+async function loadJobs() {
+  try {
+    ALL = await DB.getPublishedJobs(200);
+    renderAll();
+    loadStats();
+  } catch(e) {
+    document.getElementById('jobGrid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="ei">⚠️</div><h3>Could not load jobs</h3><p>Check your Supabase credentials in js/supabase.js</p></div>`;
+    console.error(e);
+  }
+}
+
+function renderAll() {
+  updateTicker();
+  renderCats();
+  renderFeatured();
+  applyFilter();
+}
+
+/* ── Realtime ─────────────────────────── */
+function subscribeRealtime() {
+  DB.subscribeJobs(async (payload) => {
+    if (payload.eventType === 'INSERT') {
+      const j = payload.new;
+      if (j.status === 'published' || j.status === 'featured') {
+        ALL.unshift(j);
+        renderAll();
+        toast(`🔔 New job: ${j.title.slice(0,45)}…`, 'success');
+        document.querySelector('.live-dot')?.animate([{boxShadow:'0 0 0 0 rgba(34,197,94,.8)'},{boxShadow:'0 0 0 12px rgba(34,197,94,0)'}],{duration:600,iterations:3});
+      }
+    } else if (payload.eventType === 'UPDATE') {
+      const idx = ALL.findIndex(j => j.id === payload.new.id);
+      if (idx >= 0) {
+        if (['draft','archived','expired'].includes(payload.new.status)) {
+          ALL.splice(idx, 1);
+        } else {
+          ALL[idx] = payload.new;
+        }
+        renderAll();
+      }
+    } else if (payload.eventType === 'DELETE') {
+      ALL = ALL.filter(j => j.id !== payload.old.id);
+      renderAll();
+    }
+  });
+}
+
+/* ── Stats ────────────────────────────── */
+async function loadStats() {
+  try {
+    const s = await DB.getStats();
+    if (s) {
+      animNum('sTotal', s.total || 0);
+      animNum('sViews', s.views || 0);
+      animNum('sSubs',  s.subscribers || 0);
+    }
+  } catch {}
+}
+
+function animNum(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let n = 0;
+  const step = Math.max(1, Math.ceil(target / 50));
+  const t = setInterval(() => {
+    n = Math.min(n + step, target);
+    el.textContent = n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
+    if (n >= target) clearInterval(t);
+  }, 25);
+}
+
+/* ── Ticker ───────────────────────────── */
+function updateTicker() {
+  const el = document.getElementById('ticker');
+  if (!el || !ALL.length) return;
+  const items = ALL.slice(0, 12).map(j => `🔔 ${j.title} — ${j.organization || 'Apply Now'}`).join('   ·   ');
+  el.textContent = items + '   ·   ' + items;
+}
+
+/* ── Category Cards ───────────────────── */
+function renderCats() {
+  const counts = {};
+  ALL.forEach(j => counts[j.category] = (counts[j.category] || 0) + 1);
+  const el = document.getElementById('catGrid');
+  el.innerHTML = Object.keys(CATS).map(cat => {
+    const c = CATS[cat];
+    return `<div class="cat-card" style="--cc:${c.color}" onclick="filterCat('${cat}')">
+      <div class="cat-ico">${c.emoji}</div>
+      <div><span class="cat-name">${cat}</span><span class="cat-cnt">${counts[cat]||0} jobs</span></div>
+      <span class="cat-arr">→</span>
+    </div>`;
+  }).join('');
+}
+
+/* ── Featured Jobs ────────────────────── */
+function renderFeatured() {
+  const featured = ALL.filter(j => j.is_featured || j.status === 'featured').slice(0, 3);
+  const src = featured.length ? featured : ALL.slice(0, 3);
+  document.getElementById('featGrid').innerHTML = src.map(j => buildCard(j, true)).join('');
+}
+
+/* ── Filter & Render ──────────────────── */
+function applyFilter() {
+  let jobs = curCat === 'All' ? [...ALL] : ALL.filter(j => j.category === curCat);
+  const q = document.getElementById('searchInput')?.value.trim().toLowerCase();
+  if (q) jobs = jobs.filter(j =>
+    (j.title+j.description+j.organization+j.location+'').toLowerCase().includes(q)
+  );
+  const sort = document.getElementById('sortSel')?.value;
+  if (sort === 'newest') jobs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  else if (sort === 'views') jobs.sort((a,b)=>(b.views||0)-(a.views||0));
+  filtered = jobs;
+  page = 1;
+  renderPage();
+  document.getElementById('jobBadge').textContent = filtered.length;
+}
+
+function renderPage(append = false) {
+  const grid = document.getElementById('jobGrid');
+  const start = (page - 1) * PER;
+  const slice = filtered.slice(start, start + PER);
+  if (!append) grid.innerHTML = '';
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty"><div class="ei">🔍</div><h3>No jobs found</h3><p>Try different keywords or category</p></div>`;
+    document.getElementById('loadBtn').style.display = 'none';
+    return;
+  }
+  slice.forEach((j, i) => {
+    const d = document.createElement('div');
+    d.innerHTML = buildCard(j);
+    const card = d.firstElementChild;
+    card.style.animationDelay = `${i * 0.06}s`;
+    grid.appendChild(card);
+  });
+  document.getElementById('loadBtn').style.display = start + PER < filtered.length ? 'block' : 'none';
+}
+
+function loadMore() { page++; renderPage(true); }
+
+/* ── Build Card ───────────────────────── */
+function buildCard(j, featured = false) {
+  const c = CATS[j.category] || CATS['Other'];
+  const isUrgent = j.priority === 'urgent';
+  const cls = featured ? 'hot' : isUrgent ? 'urgent' : '';
+  return `
+    <div class="card ${cls}" style="--c:${c.color}" onclick="openJob('${j.slug}')">
+      <div class="card-top">
+        <div class="card-logo" style="background:${c.bg}">${c.emoji}</div>
+        <div class="card-meta">
+          <div class="card-title">${h(j.title)}</div>
+          <div class="card-org">${h(j.organization||'Maharashtra')}</div>
+        </div>
+      </div>
+      <div class="card-tags">
+        <span class="tag" style="background:${c.bg};color:${c.color}">${c.emoji} ${j.category}</span>
+        <span class="tag tag-loc">📍 ${h(j.location||'Maharashtra')}</span>
+        ${j.vacancies?`<span class="tag tag-vac">👥 ${h(j.vacancies)}</span>`:''}
+      </div>
+      <p class="card-desc">${h((j.description||'').slice(0,130))}</p>
+      <div class="card-foot">
+        <span class="card-date ${j.last_date?'urgent':''}">
+          ${j.last_date ? '⏰ Last: '+h(j.last_date) : timeAgo(j.created_at)}
+        </span>
+        <a href="job.html?slug=${j.slug}" class="apply-btn" onclick="event.stopPropagation()">Apply Now →</a>
+      </div>
+    </div>`;
+}
+
+function openJob(slug) { window.open(`job.html?slug=${slug}`, '_blank'); }
+
+/* ── Filter/Sort/View controls ────────── */
+function filterCat(cat, btn) {
+  curCat = cat;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  else {
+    document.querySelectorAll('.fbtn').forEach(b => {
+      if (b.textContent.includes(cat) || (cat==='All' && b.textContent.trim()==='All Jobs'))
+        b.classList.add('on');
+    });
+  }
+  applyFilter();
+  document.getElementById('all-jobs')?.scrollIntoView({behavior:'smooth'});
+}
+
+function doSort() { applyFilter(); }
+
+function setView(v) {
+  view = v;
+  const grid = document.getElementById('jobGrid');
+  grid.classList.toggle('list', v === 'list');
+  document.querySelectorAll('.vbtn').forEach((b,i) => b.classList.toggle('on', (i===0&&v==='grid')||(i===1&&v==='list')));
+}
+
+/* ── Search ───────────────────────────── */
+function goSearch(cat) {
+  const q = document.getElementById('searchInput')?.value.trim();
+  if (cat) window.location.href = `jobs.html?cat=${cat}`;
+  else if (q) window.location.href = `jobs.html?q=${encodeURIComponent(q)}`;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('searchInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') goSearch();
+  });
+});
+
+/* ── Subscribe ────────────────────────── */
+async function doSubscribe(e) {
+  e.preventDefault();
+  const email = document.getElementById('subEmail').value.trim();
+  const name  = document.getElementById('subName').value.trim();
+  const cat   = document.getElementById('subCat').value;
+  try {
+    await DB.addSubscriber(email, name, cat);
+    toast(`✅ Subscribed! Alerts will be sent to ${email}`, 'success');
+    e.target.reset();
+  } catch(err) {
+    toast('❌ Subscription failed. Try again.', 'error');
+  }
+}
+
+/* ── Particles ────────────────────────── */
+function initParticles() {
+  const c = document.getElementById('particles');
+  for (let i=0;i<(innerWidth<768?12:24);i++) {
+    const p = document.createElement('div');
+    p.className = 'pt';
+    p.style.cssText = `left:${Math.random()*100}%;width:${Math.random()*4+2}px;height:${Math.random()*4+2}px;animation-duration:${Math.random()*14+9}s;animation-delay:${Math.random()*9}s;opacity:${Math.random()*.14+.04}`;
+    c.appendChild(p);
+  }
+}
+
+/* ── Header ───────────────────────────── */
+function initHeader() {
+  window.addEventListener('scroll', () => document.getElementById('hdr')?.classList.toggle('scrolled', scrollY > 20));
+  const hb = document.getElementById('burger');
+  const nav = document.getElementById('nav');
+  hb?.addEventListener('click', () => { hb.classList.toggle('open'); nav?.classList.toggle('open'); });
+  nav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { hb?.classList.remove('open'); nav.classList.remove('open'); }));
+}
+
+/* ── Scroll reveal ────────────────────── */
+function initScroll() {
+  const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:.08});
+  document.querySelectorAll('.scroll-reveal').forEach(el => obs.observe(el));
+}
+
+/* ── Back to top ──────────────────────── */
+function initBTT() {
+  window.addEventListener('scroll', () => document.getElementById('btt')?.classList.toggle('show', scrollY > 400));
+}
+</script>
+</body>
+</html>

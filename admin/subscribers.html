@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Subscribers — Admin</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <style>
+    .sb2-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    .sj{background:var(--s2);border:1.5px solid var(--bdr);border-radius:10px;padding:9px 13px;color:var(--txt);font-size:.85rem;outline:none;transition:var(--ease)}
+    .sj:focus{border-color:var(--or)}
+    .sj-w{position:relative;flex:1;min-width:200px}
+    .sj-ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:.88rem;pointer-events:none;color:var(--mt)}
+    .si{padding-left:34px!important}
+    .act-btn{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.25);border-radius:8px;padding:7px 14px;color:var(--rd);font-size:.78rem;cursor:pointer;transition:var(--ease)}
+    .act-btn:hover{background:rgba(255,77,109,.2)}
+    .gr-btn{background:rgba(0,217,126,.1);border:1px solid rgba(0,217,126,.25);border-radius:8px;padding:7px 14px;color:var(--gr);font-size:.78rem;cursor:pointer;transition:var(--ease)}
+    .gr-btn:hover{background:rgba(0,217,126,.2)}
+    .s-stat{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;padding:3px 9px;border-radius:9px}
+    .s-act{background:rgba(0,217,126,.12);color:var(--gr)}
+    .s-inact{background:rgba(255,77,109,.1);color:var(--rd)}
+  </style>
+</head>
+<body>
+<aside class="sb" id="sidebar">
+  <div class="sb-logo"><span class="ico">💼</span><div><div style="font-family:var(--head);font-size:.97rem;font-weight:800">MyCareerJob</div><div style="font-size:.63rem;color:var(--or);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Admin Panel</div></div></div>
+  <div class="sb-sec">MAIN</div>
+  <nav class="sb-nav">
+    <a href="index.html" class="sb-link"><span class="sb-ico">📊</span><span>Dashboard</span></a>
+    <a href="jobs.html" class="sb-link"><span class="sb-ico">💼</span><span>All Jobs</span></a>
+    <a href="add-job.html" class="sb-link"><span class="sb-ico">➕</span><span>Add New Job</span></a>
+    <a href="subscribers.html" class="sb-link on"><span class="sb-ico">👥</span><span>Subscribers</span></a>
+  </nav>
+  <div class="sb-sec">SETTINGS</div>
+  <nav class="sb-nav">
+    <a href="settings.html" class="sb-link"><span class="sb-ico">⚙️</span><span>Settings</span></a>
+    <a href="../index.html" class="sb-link" target="_blank"><span class="sb-ico">🌐</span><span>View Live Site</span></a>
+    <a href="#" class="sb-link" onclick="adminLogout()"><span class="sb-ico">🚪</span><span>Logout</span></a>
+  </nav>
+  <div class="sb-foot"><div class="av" data-admin-letter>A</div><div><div class="av-name" data-admin-name>Admin</div><div class="av-role" data-admin-role>Admin</div></div><div class="on-dot"></div></div>
+</aside>
+
+<div class="main" id="mainArea">
+  <header class="tb">
+    <div class="tb-left">
+      <button class="sb-tog" onclick="toggleSidebar()">☰</button>
+      <div class="bc"><span>Admin</span><span class="bc-sep">›</span><span class="bc-cur">Subscribers</span></div>
+    </div>
+    <div class="tb-right"><div class="av" data-admin-letter>A</div></div>
+  </header>
+  <div class="pg">
+
+    <!-- Stats -->
+    <div class="stats" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));margin-bottom:22px">
+      <div class="sc sc-gr"><div class="sc-ico">✅</div><div><div class="sc-val" id="sAct">—</div><div class="sc-lbl">Active</div></div></div>
+      <div class="sc sc-rd"><div class="sc-ico">❌</div><div><div class="sc-val" id="sInact">—</div><div class="sc-lbl">Inactive</div></div></div>
+      <div class="sc sc-or"><div class="sc-ico">📧</div><div><div class="sc-val" id="sTotal">—</div><div class="sc-lbl">Total</div></div></div>
+      <div class="sc sc-bl"><div class="sc-ico">🌐</div><div><div class="sc-val" id="sAll">—</div><div class="sc-lbl">All Jobs</div></div></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="sb2-bar">
+      <div class="sj-w"><span class="sj-ic">🔍</span><input type="text" class="sj si" id="subSrch" placeholder="Search by email or name..." oninput="filterSubs()"/></div>
+      <select class="sj" id="subStatF" onchange="filterSubs()" style="min-width:130px">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <button onclick="exportSubsCSV()" class="sj" style="cursor:pointer;white-space:nowrap">📥 Export CSV</button>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div class="pt">👥 Email Subscribers <span class="nb" id="subBadge">0</span></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr><th>Email</th><th>Name</th><th>Category Pref</th><th>Status</th><th>Subscribed</th><th>Actions</th></tr></thead>
+          <tbody id="subsTbody"><tr><td colspan="6" class="t-load">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div style="padding:14px 18px">
+        <div class="pg-info" id="subPgInfo"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-c" id="toastContainer"></div>
+<script src="../js/supabase.js"></script>
+<script src="js/core.js"></script>
+<script>
+let ALL_SUBS=[], filteredSubs=[];
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  await requireAuth(); initShell();
+  await loadSubs();
+});
+
+async function loadSubs(){
+  ALL_SUBS=await DB.getSubscribers().catch(()=>[]);
+  const active=ALL_SUBS.filter(s=>s.is_active).length;
+  animNum('sAct',active);animNum('sInact',ALL_SUBS.length-active);animNum('sTotal',ALL_SUBS.length);
+  animNum('sAll',ALL_SUBS.filter(s=>s.category_pref==='all').length);
+  filterSubs();
+}
+
+function filterSubs(){
+  const q=document.getElementById('subSrch').value.toLowerCase().trim();
+  const st=document.getElementById('subStatF').value;
+  filteredSubs=ALL_SUBS.filter(s=>{
+    const mq=!q||(s.email+s.name+'').toLowerCase().includes(q);
+    const ms=!st||(st==='active'?s.is_active:!s.is_active);
+    return mq&&ms;
+  });
+  document.getElementById('subBadge').textContent=filteredSubs.length;
+  document.getElementById('subPgInfo').textContent=`${filteredSubs.length} of ${ALL_SUBS.length} subscribers`;
+  renderSubs();
+}
+
+function renderSubs(){
+  const tbody=document.getElementById('subsTbody');
+  if(!filteredSubs.length){tbody.innerHTML='<tr><td colspan="6" class="t-empty">No subscribers found</td></tr>';return;}
+  tbody.innerHTML=filteredSubs.map(s=>`
+    <tr>
+      <td style="font-weight:600;font-size:.83rem">${h(s.email)}</td>
+      <td style="font-size:.8rem;color:var(--mt)">${h(s.name||'—')}</td>
+      <td><span class="spl" style="background:rgba(108,99,255,.12);color:var(--ac)">${h(s.category_pref||'all')}</span></td>
+      <td><span class="s-stat ${s.is_active?'s-act':'s-inact'}">${s.is_active?'✅ Active':'❌ Inactive'}</span></td>
+      <td style="font-size:.75rem;color:var(--mt)">${fmtDate(s.created_at)}</td>
+      <td><div class="ra">
+        <button onclick="toggleSub('${s.id}',${s.is_active})" class="rb ${s.is_active?'del':'grn'}" title="${s.is_active?'Deactivate':'Activate'}">
+          ${s.is_active?'🔴':'🟢'}
+        </button>
+        <button onclick="delSub('${s.id}','${h(s.email)}')" class="rb del" title="Delete">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+async function toggleSub(id,current){
+  const{error}=await sb.from('subscribers').update({is_active:!current}).eq('id',id);
+  if(error){aToast('❌ Failed','error');return;}
+  await loadSubs();aToast(current?'❌ Deactivated':'✅ Activated','success');
+}
+
+async function delSub(id,email){
+  if(!confirm(`Delete subscriber: ${email}?`))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',id);
+  if(error){aToast('❌ Failed','error');return;}
+  await loadSubs();aToast('🗑️ Deleted','success');
+}
+
+function exportSubsCSV(){
+  const hdr='Email,Name,Category,Status,Date\n';
+  const rows=filteredSubs.map(s=>`"${s.email}","${s.name||''}","${s.category_pref}","${s.is_active?'active':'inactive'}","${s.created_at}"`).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));a.download='subscribers.csv';a.click();
+  aToast('📥 Exported','success');
+}
+</script>
+</body>
+</html>

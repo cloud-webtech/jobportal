@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin Login — MyCareerJob.in</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/admin.css"/>
+</head>
+<body class="login-page">
+  <div class="grid-bg"></div>
+  <div class="orb1"></div>
+  <div class="orb2"></div>
+
+  <div class="login-card">
+    <div class="card-shine"></div>
+    <span class="lgi">🛡️</span>
+    <div class="lgt">MyCareer<span>Job.in</span></div>
+    <div class="lgs">Admin Control Panel</div>
+
+    <div class="sb-badge">🟢 Secured by Supabase Auth — JWT Sessions</div>
+
+    <div class="err-msg" id="errMsg"></div>
+
+    <form id="loginForm">
+      <div class="fg">
+        <label class="fl">Email Address</label>
+        <div class="iw">
+          <span class="ii">📧</span>
+          <input type="email" class="fc" id="email" placeholder="admin@mycareerjob.in" autocomplete="email" required/>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Password</label>
+        <div class="iw">
+          <span class="ii">🔒</span>
+          <input type="password" class="fc" id="password" placeholder="Your password" autocomplete="current-password" required/>
+          <button type="button" class="pw-tog" id="pwTog">👁️</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-login" id="loginBtn">
+        <span class="btxt">Sign In to Dashboard →</span>
+        <div class="spin"></div>
+      </button>
+    </form>
+
+    <div class="log-note">🔒 Secure session — All actions are logged</div>
+    <div class="back-lnk"><a href="../index.html">← Back to MyCareerJob.in</a></div>
+  </div>
+
+  <script src="../js/supabase.js"></script>
+  <script>
+    // If already logged in, redirect
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        const { data: p } = await sb.from('admin_profiles').select('is_active').eq('id', session.user.id).single();
+        if (p?.is_active) location.href = 'index.html';
+      }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('errMsg');
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      btn.classList.add('ld');
+      err.classList.remove('show');
+
+      try {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        // Check admin profile
+        const { data: profile } = await sb
+          .from('admin_profiles')
+          .select('id, is_active, full_name')
+          .eq('id', data.user.id)
+          .single();
+
+        if (!profile || !profile.is_active) {
+          await sb.auth.signOut();
+          throw new Error('Access denied. Your account is not an admin or is inactive.');
+        }
+
+        location.href = 'index.html';
+      } catch (err2) {
+        btn.classList.remove('ld');
+        err.textContent = '❌ ' + (err2.message || 'Invalid credentials');
+        err.classList.add('show');
+        document.getElementById('password').value = '';
+      }
+    });
+
+    document.getElementById('pwTog').addEventListener('click', () => {
+      const pw = document.getElementById('password');
+      const btn = document.getElementById('pwTog');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+      btn.textContent = pw.type === 'password' ? '👁️' : '🙈';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title id="pgTitle">Job Details — MyCareerJob.in</title>
+  <meta name="description" id="pgMeta" content="Job details on MyCareerJob.in"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script type="application/ld+json" id="schema"></script>
+</head>
+<body>
+<div id="particles"></div>
+
+<header class="hdr" id="hdr">
+  <div class="hdr-inner">
+    <a href="index.html" class="logo"><span class="logo-ico">💼</span>MyCareerJob<span>.in</span></a>
+    <nav class="nav" id="nav">
+      <a href="index.html">Home</a>
+      <a href="jobs.html?cat=Govt">Govt Jobs</a>
+      <a href="jobs.html?cat=IT">IT Jobs</a>
+      <a href="jobs.html?cat=Bank">Bank Jobs</a>
+      <a href="marathi.html">मराठी</a>
+      <a href="index.html#alerts" class="cta">🔔 Alerts</a>
+    </nav>
+    <button class="burger" id="burger"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="detail-wrap" id="detailWrap">
+  <!-- Loading state -->
+  <div class="breadcrumb" style="opacity:.5">Home › Jobs › Loading...</div>
+  <div class="skel" style="height:320px;margin-bottom:16px"></div>
+  <div class="skel" style="height:450px"></div>
+</div>
+
+<button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<div id="toast"></div>
+
+<script src="js/supabase.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  initParticles(); initHeader(); initBTT();
+  const slug = new URLSearchParams(location.search).get('slug');
+  if (!slug) { showNotFound('No job specified.'); return; }
+  try {
+    const job = await DB.getJobBySlug(slug);
+    if (!job) { showNotFound('This job was not found or has been removed.'); return; }
+    renderJob(job);
+    DB.incrementViews(job.id);
+    loadRelated(job.category, job.id);
+  } catch(e) {
+    showNotFound('Could not load job. Check your internet connection.');
+    console.error(e);
+  }
+});
+
+function renderJob(j) {
+  const c = CATS[j.category] || CATS['Other'];
+
+  // SEO
+  document.getElementById('pgTitle').textContent = `${j.title} — MyCareerJob.in`;
+  document.getElementById('pgMeta').content = j.description || '';
+  document.getElementById('schema').textContent = JSON.stringify({
+    "@context":"https://schema.org","@type":"JobPosting",
+    "title":j.title,"description":j.description||'',
+    "datePosted":j.created_at,"validThrough":j.last_date||'',
+    "employmentType":"FULL_TIME",
+    "hiringOrganization":{"@type":"Organization","name":j.organization||''},
+    "jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressRegion":j.location||'Maharashtra',"addressCountry":"IN"}}
+  });
+
+  document.getElementById('detailWrap').innerHTML = `
+    <div class="breadcrumb">
+      <a href="index.html">Home</a> ›
+      <a href="jobs.html?cat=${j.category}">${j.category} Jobs</a> ›
+      <span>${h(j.title.slice(0,55))}…</span>
+    </div>
+
+    <!-- Header Card -->
+    <div class="detail-card fade-up">
+      <div class="detail-hdr">
+        <div class="detail-logo" style="background:${c.bg}">${c.emoji}</div>
+        <div>
+          <h1 class="detail-title">${h(j.title)}</h1>
+          <div class="detail-org">${h(j.organization||'Maharashtra Government')}</div>
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-chip" style="background:${c.bg};color:${c.color}">${c.emoji} ${j.category}</span>
+        <span class="meta-chip">📍 ${h(j.location||'Maharashtra')}</span>
+        ${j.vacancies?`<span class="meta-chip">👥 ${h(j.vacancies)} Vacancies</span>`:''}
+        ${j.salary?`<span class="meta-chip">💰 ${h(j.salary)}</span>`:''}
+        ${j.last_date?`<span class="meta-chip" style="background:#fef2f2;color:#dc2626">⏰ Last Date: ${h(j.last_date)}</span>`:''}
+        <span class="meta-chip">👁️ ${(j.views||0).toLocaleString('en-IN')} views</span>
+      </div>
+
+      <div class="info-grid">
+        ${j.qualification?`<div class="info-box"><div class="lbl">Qualification</div><div class="val">${h(j.qualification)}</div></div>`:''}
+        ${j.experience?`<div class="info-box"><div class="lbl">Experience</div><div class="val">${h(j.experience)}</div></div>`:''}
+        ${j.age_limit?`<div class="info-box"><div class="lbl">Age Limit</div><div class="val">${h(j.age_limit)}</div></div>`:''}
+        ${j.salary?`<div class="info-box"><div class="lbl">Salary</div><div class="val">${h(j.salary)}</div></div>`:''}
+        ${j.vacancies?`<div class="info-box"><div class="lbl">Vacancies</div><div class="val">${h(j.vacancies)}</div></div>`:''}
+        ${j.exam_date?`<div class="info-box"><div class="lbl">Exam Date</div><div class="val">${h(j.exam_date)}</div></div>`:''}
+        ${j.last_date?`<div class="info-box" style="border-left-color:#dc2626"><div class="lbl" style="color:#dc2626">Last Date</div><div class="val">${h(j.last_date)}</div></div>`:''}
+        ${j.source?`<div class="info-box"><div class="lbl">Source</div><div class="val">${h(j.source)}</div></div>`:''}
+      </div>
+    </div>
+
+    <!-- Description Card -->
+    <div class="detail-card fade-up" style="animation-delay:.1s">
+      <div class="detail-body">
+        ${j.full_description || `<p>${h(j.description||'')}</p>`}
+      </div>
+      <div class="apply-box">
+        <h3>✅ Ready to Apply?</h3>
+        <p>Visit the official website to apply. Always verify details on the official site before submitting your application.</p>
+        <a href="${h(j.apply_link||'#')}" target="_blank" rel="noopener nofollow" class="apply-big">
+          Apply Now — Official Website →
+        </a>
+      </div>
+    </div>
+
+    <!-- Share Card -->
+    <div class="detail-card fade-up" style="animation-delay:.15s;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span style="font-weight:700;font-size:.9rem">Share this job:</span>
+      <a class="share-btn sh-wa" href="https://api.whatsapp.com/send?text=${encodeURIComponent(j.title+'\n\nApply: '+location.href)}" target="_blank">📱 WhatsApp</a>
+      <a class="share-btn sh-tg" href="https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(j.title)}" target="_blank">✈️ Telegram</a>
+      <button class="share-btn sh-cp" onclick="navigator.clipboard?.writeText(location.href).then(()=>toast('🔗 Link copied!','success'))">🔗 Copy Link</button>
+    </div>
+
+    <!-- Related Jobs Placeholder -->
+    <div id="relatedSection"></div>`;
+}
+
+async function loadRelated(cat, excludeId) {
+  try {
+    const jobs = await DB.getJobsByCategory(cat, 20);
+    const related = jobs.filter(j => j.id !== excludeId).slice(0, 3);
+    if (!related.length) return;
+    const c = CATS[cat] || CATS['Other'];
+    document.getElementById('relatedSection').innerHTML = `
+      <div style="margin-top:8px">
+        <div class="sec-hdr" style="margin-bottom:16px">
+          <h2 class="sec-title"><span class="dot"></span>Related ${cat} Jobs</h2>
+          <a href="jobs.html?cat=${cat}" class="see-all">View All →</a>
+        </div>
+        <div class="grid">
+          ${related.map(j => `
+          <div class="card" style="--c:${c.color}" onclick="location.href='job.html?slug=${j.slug}'">
+            <div class="card-top">
+              <div class="card-logo" style="background:${c.bg}">${c.emoji}</div>
+              <div class="card-meta"><div class="card-title">${h(j.title)}</div><div class="card-org">${h(j.organization||'')}</div></div>
+            </div>
+            <p class="card-desc">${h((j.description||'').slice(0,100))}</p>
+            <div class="card-foot">
+              <span class="card-date">${j.last_date?'⏰ '+h(j.last_date):''}</span>
+              <a href="job.html?slug=${j.slug}" class="apply-btn" onclick="event.stopPropagation()">View →</a>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+  } catch {}
+}
+
+function showNotFound(msg) {
+  document.getElementById('pgTitle').textContent = 'Job Not Found — MyCareerJob.in';
+  document.getElementById('detailWrap').innerHTML = `
+    <div style="text-align:center;padding:80px 20px">
+      <div style="font-size:4rem;margin-bottom:20px">😕</div>
+      <h2 style="font-family:var(--head);font-size:1.8rem;margin-bottom:10px">Job Not Found</h2>
+      <p style="color:var(--muted);margin-bottom:28px">${h(msg)}</p>
+      <a href="jobs.html" style="background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;padding:13px 32px;border-radius:26px;font-weight:700;font-size:1rem;display:inline-block">← Browse All Jobs</a>
+    </div>`;
+}
+
+function initParticles(){const c=document.getElementById('particles');for(let i=0;i<10;i++){const p=document.createElement('div');p.className='pt';p.style.cssText=`left:${Math.random()*100}%;width:${Math.random()*3+2}px;height:${Math.random()*3+2}px;animation-duration:${Math.random()*14+9}s;animation-delay:${Math.random()*9}s;opacity:.07`;c.appendChild(p);}}
+function initHeader(){window.addEventListener('scroll',()=>document.getElementById('hdr')?.classList.toggle('scrolled',scrollY>20));const hb=document.getElementById('burger');const nav=document.getElementById('nav');hb?.addEventListener('click',()=>{hb.classList.toggle('open');nav?.classList.toggle('open');});nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{hb?.classList.remove('open');nav.classList.remove('open');}));}
+function initBTT(){window.addEventListener('scroll',()=>document.getElementById('btt')?.classList.toggle('show',scrollY>400));}
+</script>
+</body>
+</html>

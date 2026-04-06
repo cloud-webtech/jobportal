@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Add Job — Admin</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <style>
+    .form-sec{background:var(--s1);border:1px solid var(--bdr);border-radius:16px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
+    .form-sec::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--or),var(--ac))}
+    .form-sec-title{font-family:var(--head);font-size:.95rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .gfull{grid-column:1/-1}
+    @media(max-width:700px){.g2,.g3{grid-template-columns:1fr}}
+    .slug-prev{font-size:.7rem;color:var(--mt);margin-top:4px}
+    .slug-prev a{color:var(--ac)}
+    .char-cnt{text-align:right;font-size:.7rem;color:var(--mt);margin-top:3px}
+    .section-adder{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+    .sec-add-btn{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:5px 11px;font-size:.75rem;color:var(--mt);cursor:pointer;transition:var(--ease)}
+    .sec-add-btn:hover{border-color:var(--or);color:var(--or)}
+    .prev-pane{background:#fff;border-radius:14px;padding:18px;color:#1a1a2e}
+    .prev-title{font-family:'Baloo 2',cursive;font-size:1rem;font-weight:800;line-height:1.3;margin-bottom:4px}
+    .prev-org{font-size:.75rem;color:#6b7280;margin-bottom:8px}
+    .prev-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
+    .prev-tag{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:8px}
+    .prev-desc{font-size:.82rem;color:#374151;line-height:1.5;margin-bottom:8px}
+    .prev-foot{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #f3f4f6}
+    .seo-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:.8rem}
+    .autosave{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--s1);border:1px solid var(--bdr);border-radius:18px;padding:7px 16px;font-size:.78rem;color:var(--mt);display:flex;align-items:center;gap:7px;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none}
+    .autosave.show{opacity:1}
+    .as-dot{width:6px;height:6px;border-radius:50%;background:var(--gr);animation:onP 1s infinite}
+    .tmpl-btns{display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap}
+    .tmpl-btn{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:5px 12px;font-size:.75rem;color:var(--mt);cursor:pointer;transition:var(--ease)}
+    .tmpl-btn:hover{border-color:var(--ac);color:var(--ac)}
+  </style>
+</head>
+<body>
+<aside class="sb" id="sidebar">
+  <div class="sb-logo"><span class="ico">💼</span><div><div style="font-family:var(--head);font-size:.97rem;font-weight:800">MyCareerJob</div><div style="font-size:.63rem;color:var(--or);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Admin Panel</div></div></div>
+  <div class="sb-sec">MAIN</div>
+  <nav class="sb-nav">
+    <a href="index.html" class="sb-link"><span class="sb-ico">📊</span><span>Dashboard</span></a>
+    <a href="jobs.html" class="sb-link"><span class="sb-ico">💼</span><span>All Jobs</span></a>
+    <a href="add-job.html" class="sb-link on"><span class="sb-ico">➕</span><span>Add New Job</span></a>
+    <a href="subscribers.html" class="sb-link"><span class="sb-ico">👥</span><span>Subscribers</span></a>
+  </nav>
+  <div class="sb-sec">SETTINGS</div>
+  <nav class="sb-nav">
+    <a href="settings.html" class="sb-link"><span class="sb-ico">⚙️</span><span>Settings</span></a>
+    <a href="../index.html" class="sb-link" target="_blank"><span class="sb-ico">🌐</span><span>View Live Site</span></a>
+    <a href="#" class="sb-link" onclick="adminLogout()"><span class="sb-ico">🚪</span><span>Logout</span></a>
+  </nav>
+  <div class="sb-foot">
+    <div class="av" data-admin-letter>A</div>
+    <div><div class="av-name" data-admin-name>Admin</div><div class="av-role" data-admin-role>Admin</div></div>
+    <div class="on-dot"></div>
+  </div>
+</aside>
+
+<div class="main" id="mainArea">
+  <header class="tb">
+    <div class="tb-left">
+      <button class="sb-tog" onclick="toggleSidebar()">☰</button>
+      <div class="bc">
+        <a href="jobs.html" style="color:var(--mt)">Jobs</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-cur" id="pgHead">Add New Job</span>
+      </div>
+    </div>
+    <div class="tb-right">
+      <button onclick="togglePreview()" class="btn-sec" style="padding:7px 13px;font-size:.8rem">👁️ Preview</button>
+      <div class="av" data-admin-letter>A</div>
+    </div>
+  </header>
+
+  <div class="pg">
+    <div style="display:grid;grid-template-columns:1fr 350px;gap:20px;align-items:start" id="mainGrid">
+
+      <!-- ── LEFT: FORM ─────────────────── -->
+      <div>
+
+        <!-- Basic Info -->
+        <div class="form-sec">
+          <div class="form-sec-title">📝 Basic Information</div>
+          <div class="g2">
+            <div class="fg gfull">
+              <label class="fl">Job Title <span class="req">*</span></label>
+              <input type="text" class="fc" id="fTitle" placeholder="e.g. MPSC State Service Examination 2025" oninput="onTitleChange()" required/>
+              <div class="slug-prev" id="slugPrev">URL: <a href="#" target="_blank">/job.html?slug=...</a></div>
+            </div>
+            <div class="fg">
+              <label class="fl">Organization <span class="req">*</span></label>
+              <input type="text" class="fc" id="fOrg" placeholder="e.g. MPSC, TCS, SBI" oninput="updatePrev()"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Category <span class="req">*</span></label>
+              <select class="fc" id="fCat" onchange="updatePrev();updateSEO()">
+                <option value="">— Select Category —</option>
+                <option value="Govt">🏛️ Government</option>
+                <option value="IT">💻 IT / Technology</option>
+                <option value="Private">🏢 Private Sector</option>
+                <option value="Bank">🏦 Banking / Finance</option>
+                <option value="Railway">🚂 Railway</option>
+                <option value="Defence">🎖️ Defence</option>
+                <option value="Health">🏥 Health / Medical</option>
+                <option value="Education">🎓 Education</option>
+                <option value="Police">👮 Police</option>
+                <option value="Other">💼 Other</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">Location</label>
+              <input type="text" class="fc" id="fLoc" value="Maharashtra" oninput="updatePrev()"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Total Vacancies</label>
+              <input type="text" class="fc" id="fVac" placeholder="e.g. 550 / Multiple" oninput="updatePrev()"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Salary / Pay Scale</label>
+              <input type="text" class="fc" id="fSalary" placeholder="e.g. ₹35,400 - ₹1,12,400" oninput="updatePrev()"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Last Date to Apply</label>
+              <input type="text" class="fc" id="fLastDate" placeholder="e.g. 31 Jan 2025" oninput="updatePrev()"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Apply Link (Official Site)</label>
+              <input type="url" class="fc" id="fApply" placeholder="https://mpsc.gov.in" oninput="updateSEO()"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Short Description -->
+        <div class="form-sec">
+          <div class="form-sec-title">📄 Short Description (for cards &amp; SEO)</div>
+          <div class="fg">
+            <label class="fl">Meta Description <span class="req">*</span> <small style="font-size:.68rem;text-transform:none">(max 200 chars — shown on job cards &amp; Google)</small></label>
+            <textarea class="fc" id="fDesc" rows="3" maxlength="200"
+              placeholder="Brief summary shown on job cards and in search results..."
+              oninput="updatePrev();updateSEO();document.getElementById('dCnt').textContent=this.value.length"></textarea>
+            <div class="char-cnt"><span id="dCnt">0</span>/200</div>
+          </div>
+        </div>
+
+        <!-- Full Description (Rich Editor) -->
+        <div class="form-sec">
+          <div class="form-sec-title">📋 Full Job Details (Rich Text Editor)</div>
+          <!-- Templates -->
+          <div class="tmpl-btns">
+            <button class="tmpl-btn" onclick="insertTemplate('govt')">📋 Govt Template</button>
+            <button class="tmpl-btn" onclick="insertTemplate('it')">💻 IT Template</button>
+            <button class="tmpl-btn" onclick="insertTemplate('bank')">🏦 Bank Template</button>
+            <button class="tmpl-btn" onclick="insertTemplate('railway')">🚂 Railway Template</button>
+          </div>
+          <!-- Toolbar -->
+          <div class="ebar">
+            <button class="eb" onclick="fmt('bold')"><b>B</b></button>
+            <button class="eb" onclick="fmt('italic')"><i>I</i></button>
+            <button class="eb" onclick="fmt('underline')"><u>U</u></button>
+            <div class="ediv"></div>
+            <button class="eb" onclick="fmt('insertUnorderedList')">• List</button>
+            <button class="eb" onclick="fmt('insertOrderedList')">1. List</button>
+            <button class="eb" onclick="fmtBlock('h3')">H3</button>
+            <button class="eb" onclick="fmtBlock('h4')">H4</button>
+            <div class="ediv"></div>
+            <button class="eb" onclick="insertTable()">⊞ Table</button>
+            <div class="ediv"></div>
+            <button class="eb" onclick="document.getElementById('rich').innerHTML=''" style="color:var(--rd)">✕ Clear</button>
+          </div>
+          <div contenteditable="true" class="rich" id="rich"
+            oninput="updateRichCount();updateSEO()"
+            onkeydown="handleRichTab(event)"></div>
+          <div class="char-cnt" id="richCnt">0 characters</div>
+          <!-- Section adder buttons -->
+          <div class="section-adder">
+            <button class="sec-add-btn" onclick="addSection('Eligibility Criteria')">+ Eligibility</button>
+            <button class="sec-add-btn" onclick="addSection('Important Dates')">+ Dates</button>
+            <button class="sec-add-btn" onclick="addSection('Selection Process')">+ Selection</button>
+            <button class="sec-add-btn" onclick="addSection('Application Fee')">+ Fee</button>
+            <button class="sec-add-btn" onclick="addSection('Pay Scale / Salary')">+ Salary</button>
+            <button class="sec-add-btn" onclick="addSection('How to Apply')">+ How to Apply</button>
+            <button class="sec-add-btn" onclick="addSection('Important Links')">+ Links</button>
+          </div>
+        </div>
+
+        <!-- Additional Details -->
+        <div class="form-sec">
+          <div class="form-sec-title">🔧 Additional Details</div>
+          <div class="g2">
+            <div class="fg">
+              <label class="fl">Qualification</label>
+              <input type="text" class="fc" id="fQual" placeholder="e.g. B.E / B.Tech / Graduate"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Experience</label>
+              <input type="text" class="fc" id="fExp" placeholder="e.g. Fresher / 2-5 years"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Age Limit</label>
+              <input type="text" class="fc" id="fAge" placeholder="e.g. 18-35 years"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Exam Date</label>
+              <input type="text" class="fc" id="fExam" placeholder="e.g. March 2025 / TBA"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Source / Reference</label>
+              <input type="text" class="fc" id="fSource" placeholder="e.g. MPSC Official, FreeJobAlert"/>
+            </div>
+            <div class="fg">
+              <label class="fl">Priority</label>
+              <select class="fc" id="fPrio">
+                <option value="normal">Normal</option>
+                <option value="high">⬆️ High</option>
+                <option value="urgent">🔴 Urgent</option>
+              </select>
+            </div>
+          </div>
+          <!-- Tags -->
+          <div class="fg" style="margin-top:4px">
+            <label class="fl">Tags / Keywords <small style="text-transform:none;font-size:.68rem">(press Enter to add)</small></label>
+            <div class="tw" id="tagWrap" onclick="document.getElementById('tagInp').focus()"></div>
+            <div style="font-size:.7rem;color:var(--mt);margin-top:4px">Tags help SEO and search. e.g. mpsc, govt, maharashtra</div>
+          </div>
+          <!-- Status & Featured -->
+          <div class="g3" style="margin-top:14px">
+            <div class="fg">
+              <label class="fl">Status</label>
+              <select class="fc" id="fStatus">
+                <option value="published">✅ Published (Live)</option>
+                <option value="draft">📝 Draft (Hidden)</option>
+                <option value="featured">🔥 Featured</option>
+                <option value="expired">⏰ Expired</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">Featured on Homepage</label>
+              <select class="fc" id="fFeat">
+                <option value="false">No</option>
+                <option value="true">Yes — Show Featured</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">Marathi Title (Optional)</label>
+              <input type="text" class="fc" id="fMr" placeholder="मराठी शीर्षक"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Buttons -->
+        <div class="form-sec" style="border-color:rgba(255,107,0,.2)">
+          <div style="display:flex;gap:11px;flex-wrap:wrap;align-items:center">
+            <button class="btn-save" id="saveBtn" onclick="saveJob('published')">
+              <span id="saveBtnTxt">💾 Publish Job</span>
+            </button>
+            <button class="btn-dft" onclick="saveJob('draft')">Save as Draft</button>
+            <button style="background:none;border:1px solid rgba(255,77,109,.3);color:var(--rd);border-radius:10px;padding:12px 16px;cursor:pointer;font-size:.85rem" onclick="location.href='jobs.html'">Cancel</button>
+            <span style="font-size:.76rem;color:var(--mt);margin-left:auto" id="saveStatus"></span>
+          </div>
+        </div>
+
+      </div><!-- /left -->
+
+      <!-- ── RIGHT: PREVIEW + SEO ───────── -->
+      <div id="rightPanel">
+
+        <!-- Live Preview -->
+        <div class="panel" style="margin-bottom:16px;position:sticky;top:78px">
+          <div class="ph"><div class="pt">👁️ Live Card Preview</div></div>
+          <div style="padding:0">
+            <div class="prev-pane" id="prevPane" style="border-radius:0 0 16px 16px">
+              <div style="text-align:center;color:#9ca3af;padding:22px;font-size:.85rem">Start filling the form to see preview</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEO Score -->
+        <div class="panel" style="margin-bottom:16px">
+          <div class="ph"><div class="pt">🎯 SEO Score</div></div>
+          <div class="pb">
+            <div class="seo-row"><span>Score</span><strong id="seoScore" style="color:var(--or)">0%</strong></div>
+            <div class="seo-track"><div class="seo-fill" id="seoFill" style="width:0%;background:var(--rd)"></div></div>
+            <div class="seo-chk" id="seoChks"></div>
+          </div>
+        </div>
+
+      </div><!-- /right -->
+
+    </div><!-- /grid -->
+  </div><!-- /pg -->
+</div><!-- /main -->
+
+<div class="autosave" id="autosave"><div class="as-dot"></div><span>Autosaved</span></div>
+<div class="toast-c" id="toastContainer"></div>
+
+<script src="../js/supabase.js"></script>
+<script src="js/core.js"></script>
+<script>
+/* ── State ─────────────────────────── */
+let editId = null;
+let tags   = [];
+let autoST = null;
+const CAT_COLORS_MAP = {Govt:'#2ECC71',IT:'#3498DB',Private:'#9B59B6',Bank:'#F39C12',Railway:'#E74C3C',Defence:'#1ABC9C',Health:'#E91E63',Education:'#FF9800',Police:'#5D4E8A',Other:'#FF6B00'};
+const CAT_EMOJI_MAP  = {Govt:'🏛️',IT:'💻',Private:'🏢',Bank:'🏦',Railway:'🚂',Defence:'🎖️',Health:'🏥',Education:'🎓',Police:'👮',Other:'💼'};
+
+/* ── Boot ─────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  await requireAuth();
+  initShell();
+  renderTagWrap();
+
+  const p = new URLSearchParams(location.search);
+  editId = p.get('edit');
+  if (editId) {
+    document.getElementById('pgHead').textContent = 'Edit Job';
+    document.getElementById('saveBtnTxt').textContent = '💾 Update Job';
+    await loadEdit(editId);
+  }
+
+  // Watch inputs
+  ['fTitle','fOrg','fCat','fLoc','fDesc','fVac','fSalary','fLastDate'].forEach(id => {
+    const el = document.getElementById(id);
+    el?.addEventListener('input', () => { updatePrev(); updateSEO(); scheduleAutosave(); });
+    el?.addEventListener('change', () => { updatePrev(); updateSEO(); });
+  });
+  document.getElementById('rich').addEventListener('input', scheduleAutosave);
+  updateSEO();
+});
+
+/* ── Slug ──────────────────────────── */
+function onTitleChange() {
+  const slug = slugify(document.getElementById('fTitle').value);
+  document.getElementById('slugPrev').innerHTML =
+    `URL: <a href="../job.html?slug=${slug}" target="_blank" style="color:var(--ac)">/job.html?slug=${slug}</a>`;
+  updatePrev(); updateSEO(); scheduleAutosave();
+}
+
+/* ── Live Preview ──────────────────── */
+function updatePrev() {
+  const title   = document.getElementById('fTitle').value;
+  const org     = document.getElementById('fOrg').value;
+  const cat     = document.getElementById('fCat').value;
+  const loc     = document.getElementById('fLoc').value;
+  const desc    = document.getElementById('fDesc').value;
+  const vac     = document.getElementById('fVac').value;
+  const salary  = document.getElementById('fSalary').value;
+  const ld      = document.getElementById('fLastDate').value;
+  if (!title) return;
+  const color = CAT_COLORS_MAP[cat] || '#FF6B00';
+  const emoji = CAT_EMOJI_MAP[cat] || '💼';
+  document.getElementById('prevPane').innerHTML = `
+    <div style="border-left:4px solid ${color};padding-left:11px;margin-bottom:9px">
+      <div class="prev-title">${h(title.slice(0,65))}${title.length>65?'…':''}</div>
+      <div class="prev-org">${h(org||'Organization')}</div>
+    </div>
+    <div class="prev-tags">
+      ${cat?`<span class="prev-tag" style="background:${color}20;color:${color}">${emoji} ${cat}</span>`:''}
+      ${loc?`<span class="prev-tag" style="background:#f3f4f6;color:#6b7280">📍 ${h(loc)}</span>`:''}
+      ${vac?`<span class="prev-tag" style="background:#f3f4f6;color:#6b7280">👥 ${h(vac)}</span>`:''}
+    </div>
+    ${desc?`<div class="prev-desc">${h(desc.slice(0,120))}${desc.length>120?'…':''}</div>`:''}
+    <div class="prev-foot">
+      ${ld?`<span style="font-size:.7rem;color:#dc2626;background:#fef2f2;padding:2px 7px;border-radius:6px">⏰ Last: ${h(ld)}</span>`:'<span></span>'}
+      <span style="background:linear-gradient(135deg,#FF6B00,#FF8C38);color:#fff;padding:6px 13px;border-radius:14px;font-size:.75rem;font-weight:700">Apply Now →</span>
+    </div>`;
+}
+
+/* ── SEO Score ─────────────────────── */
+function updateSEO() {
+  const chks = [
+    { l: 'Title filled (20+ chars)',        p: document.getElementById('fTitle').value.length >= 20 },
+    { l: 'Title not too long (max 80)',      p: document.getElementById('fTitle').value.length <= 80 },
+    { l: 'Short description (50+ chars)',    p: document.getElementById('fDesc').value.length >= 50 },
+    { l: 'Category selected',               p: !!document.getElementById('fCat').value },
+    { l: 'Location set',                    p: !!document.getElementById('fLoc').value },
+    { l: 'Apply link added',                p: !!document.getElementById('fApply').value },
+    { l: 'Last date specified',             p: !!document.getElementById('fLastDate').value },
+    { l: 'Full description (200+ chars)',   p: (document.getElementById('rich').innerText||'').length >= 200 },
+    { l: 'Tags added',                      p: tags.length > 0 },
+  ];
+  const pct = Math.round(chks.filter(c=>c.p).length / chks.length * 100);
+  document.getElementById('seoScore').textContent = pct + '%';
+  const fill = document.getElementById('seoFill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct >= 80 ? '#00D97E' : pct >= 50 ? '#F39C12' : '#FF4D6D';
+  document.getElementById('seoChks').innerHTML = chks.map(c =>
+    `<div style="display:flex;align-items:center;gap:6px;color:${c.p?'#00D97E':'var(--mt)'};margin-bottom:4px">
+      ${c.p?'✅':'○'} <span>${c.l}</span>
+    </div>`).join('');
+}
+
+function updateRichCount() {
+  const len = (document.getElementById('rich').innerText||'').length;
+  document.getElementById('richCnt').textContent = len + ' characters';
+}
+
+/* ── Rich Editor Helpers ───────────── */
+function fmt(cmd) { document.execCommand(cmd, false, null); document.getElementById('rich').focus(); }
+function fmtBlock(tag) { document.execCommand('formatBlock', false, tag); }
+function addSection(title) {
+  document.getElementById('rich').focus();
+  document.execCommand('insertHTML', false,
+    `<h3 style="color:#FF6B00;margin:16px 0 8px">${title}</h3><ul><li>Enter details here</li></ul>`);
+}
+function insertTable() {
+  const t = `<table border="1" style="border-collapse:collapse;width:100%;font-size:.9rem"><thead><tr>
+    <th style="padding:7px;background:#f3f4f6">Post Name</th>
+    <th style="padding:7px;background:#f3f4f6">Vacancies</th>
+    <th style="padding:7px;background:#f3f4f6">Pay Scale</th>
+  </tr></thead><tbody><tr>
+    <td style="padding:7px">Post 1</td><td style="padding:7px">XX</td><td style="padding:7px">₹XX,XXX</td>
+  </tr></tbody></table>`;
+  document.execCommand('insertHTML', false, t);
+}
+function handleRichTab(e) {
+  if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '    '); }
+}
+
+/* ── Templates ─────────────────────── */
+function insertTemplate(type) {
+  const templates = {
+    govt: `<h3 style="color:#2ECC71">📋 Post Details</h3><p><strong>Organization:</strong> [Name]<br><strong>Post Name:</strong> [Post]<br><strong>Total Vacancies:</strong> [N]<br><strong>Department:</strong> [Dept]</p>
+<h3 style="color:#2ECC71">📅 Important Dates</h3><ul><li><strong>Application Start:</strong> [Date]</li><li><strong>Last Date to Apply:</strong> [Date]</li><li><strong>Exam Date:</strong> To be announced</li></ul>
+<h3 style="color:#2ECC71">✅ Eligibility Criteria</h3><ul><li><strong>Education:</strong> [Qualification]</li><li><strong>Age Limit:</strong> [Age range]</li><li><strong>Nationality:</strong> Indian</li></ul>
+<h3 style="color:#2ECC71">💰 Application Fee</h3><ul><li>General / OBC: ₹[Amount]</li><li>SC / ST / Female: ₹[Amount] or Nil</li><li>Payment Mode: Online only</li></ul>
+<h3 style="color:#2ECC71">📝 Selection Process</h3><ol><li>Written Examination (Objective)</li><li>Mains Examination / Skill Test</li><li>Interview / Document Verification</li></ol>
+<h3 style="color:#2ECC71">🔗 How to Apply</h3><ol><li>Visit official website</li><li>Click on "Apply Online" link</li><li>Register and fill application form</li><li>Upload required documents</li><li>Pay application fee</li><li>Submit and take printout</li></ol>`,
+
+    it: `<h3 style="color:#3498DB">💼 Job Role</h3><p><strong>Position:</strong> [Job Title]<br><strong>Experience:</strong> [X] years<br><strong>Location:</strong> [City], Maharashtra<br><strong>Work Mode:</strong> Work from Office</p>
+<h3 style="color:#3498DB">🔧 Required Skills</h3><ul><li>[Primary Skill] — [X] years</li><li>[Secondary Skill]</li><li>REST APIs / Microservices</li><li>Git, Agile / Scrum methodology</li><li>Good communication skills</li></ul>
+<h3 style="color:#3498DB">🎓 Qualification</h3><ul><li>B.E / B.Tech / M.Tech in CS / IT or equivalent</li><li>Minimum 60% aggregate throughout academics</li></ul>
+<h3 style="color:#3498DB">💰 Compensation</h3><ul><li><strong>CTC:</strong> ₹[X] - ₹[Y] LPA (based on experience)</li><li>Health insurance for self + family</li><li>Learning and development budget</li><li>Performance bonus</li></ul>
+<h3 style="color:#3498DB">📝 How to Apply</h3><p>Apply via the official company careers portal. Upload resume in PDF format. Only shortlisted candidates will be contacted.</p>`,
+
+    bank: `<h3 style="color:#F39C12">🏦 Vacancy Details</h3><p><strong>Post Name:</strong> [Post]<br><strong>Organization:</strong> [Bank Name]<br><strong>Total Posts:</strong> [N]<br><strong>Category:</strong> [General/OBC/SC/ST breakup]</p>
+<h3 style="color:#F39C12">📅 Important Dates</h3><ul><li>Online Registration Start: [Date]</li><li>Last Date for Registration: [Date]</li><li>Preliminary Exam: [Date]</li><li>Mains Exam: [Date]</li></ul>
+<h3 style="color:#F39C12">✅ Eligibility</h3><ul><li><strong>Education:</strong> Graduation in any discipline</li><li><strong>Age:</strong> [Min]-[Max] years (OBC +3, SC/ST +5)</li><li><strong>IBPS Score:</strong> Valid CRP score required (if applicable)</li></ul>
+<h3 style="color:#F39C12">📝 Selection Process</h3><ol><li>Online Preliminary Exam</li><li>Online Mains Exam</li><li>Interview (for officer posts only)</li><li>Document Verification</li><li>Medical Examination</li></ol>
+<h3 style="color:#F39C12">💰 Application Fee</h3><ul><li>General / OBC / EWS: ₹[Amount]</li><li>SC / ST / PwD: ₹[Amount]</li></ul>`,
+
+    railway: `<h3 style="color:#E74C3C">🚂 Post Details</h3><p><strong>Board:</strong> [RRB Zone Name]<br><strong>Post Name:</strong> [Post]<br><strong>CEN No.:</strong> [CEN Number]<br><strong>Total Vacancies:</strong> [N]</p>
+<h3 style="color:#E74C3C">📅 Important Dates</h3><ul><li>Notification Date: [Date]</li><li>Application Start: [Date]</li><li>Last Date: [Date]</li><li>Exam Date: [Date / TBA]</li></ul>
+<h3 style="color:#E74C3C">✅ Eligibility</h3><ul><li><strong>Education:</strong> [10th / 12th / Diploma / Graduation]</li><li><strong>Age:</strong> [Min]-[Max] years</li><li><strong>Medical:</strong> A1 / A2 / A3 / B1 / B2 (as applicable)</li></ul>
+<h3 style="color:#E74C3C">💰 Pay Scale</h3><ul><li>Pay Level [X] — ₹[Min] to ₹[Max] per month</li><li>DA, HRA, Transport Allowance extra</li></ul>
+<h3 style="color:#E74C3C">📝 How to Apply</h3><ol><li>Visit official RRB website for your zone</li><li>Register with valid email and mobile</li><li>Fill and submit application form</li><li>Pay fee via SBI Challan / Net Banking / UPI</li></ol>`
+  };
+  document.getElementById('rich').focus();
+  document.execCommand('insertHTML', false, templates[type] || '');
+  updateRichCount(); updateSEO();
+}
+
+/* ── Tags ──────────────────────────── */
+function renderTagWrap() {
+  const wrap = document.getElementById('tagWrap');
+  const inp  = document.createElement('input');
+  inp.className = 'ti'; inp.id = 'tagInp';
+  inp.placeholder = 'Type tag & press Enter';
+  inp.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = inp.value.trim().replace(',','');
+      if (val && !tags.includes(val)) { tags.push(val); }
+      inp.value = '';
+      renderTagChips();
+      updateSEO(); scheduleAutosave();
+    }
+    if (e.key === 'Backspace' && !inp.value && tags.length) {
+      tags.pop(); renderTagChips();
+    }
+  };
+  wrap.innerHTML = '';
+  tags.forEach(tag => {
+    const chip = document.createElement('span');
+    chip.className = 'tc';
+    chip.innerHTML = `${h(tag)}<button type="button" onclick="removeTag('${h(tag)}')">×</button>`;
+    wrap.appendChild(chip);
+  });
+  wrap.appendChild(inp);
+}
+function renderTagChips() { renderTagWrap(); }
+function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTagChips(); updateSEO(); }
+
+/* ── Autosave ──────────────────────── */
+function scheduleAutosave() {
+  clearTimeout(autoST);
+  autoST = setTimeout(() => {
+    localStorage.setItem('mcj_draft', JSON.stringify(collectData()));
+    const el = document.getElementById('autosave');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }, 2000);
+}
+
+/* ── Collect Form Data ─────────────── */
+function collectData() {
+  const title = document.getElementById('fTitle').value.trim();
+  return {
+    slug:             editId ? undefined : slugify(title),
+    title,
+    organization:     document.getElementById('fOrg').value.trim() || null,
+    category:         document.getElementById('fCat').value || 'Other',
+    location:         document.getElementById('fLoc').value.trim() || 'Maharashtra',
+    description:      document.getElementById('fDesc').value.trim() || null,
+    full_description: document.getElementById('rich').innerHTML || null,
+    apply_link:       document.getElementById('fApply').value.trim() || null,
+    vacancies:        document.getElementById('fVac').value.trim() || null,
+    salary:           document.getElementById('fSalary').value.trim() || null,
+    qualification:    document.getElementById('fQual').value.trim() || null,
+    experience:       document.getElementById('fExp').value.trim() || null,
+    age_limit:        document.getElementById('fAge').value.trim() || null,
+    exam_date:        document.getElementById('fExam').value.trim() || null,
+    last_date:        document.getElementById('fLastDate').value.trim() || null,
+    source:           document.getElementById('fSource').value.trim() || null,
+    priority:         document.getElementById('fPrio').value,
+    is_featured:      document.getElementById('fFeat').value === 'true',
+    tags,
+  };
+}
+
+/* ── SAVE JOB → SUPABASE ───────────── */
+async function saveJob(status) {
+  const title = document.getElementById('fTitle').value.trim();
+  const cat   = document.getElementById('fCat').value;
+  if (!title)  { aToast('❌ Job title is required!', 'error');    document.getElementById('fTitle').focus(); return; }
+  if (!cat)    { aToast('❌ Please select a category!', 'error'); document.getElementById('fCat').focus();  return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  document.getElementById('saveBtnTxt').textContent = '⏳ Saving...';
+
+  const data = {
+    ...collectData(),
+    status,
+    updated_at: new Date().toISOString(),
+  };
+
+  // On new job, set published_at; on edit, keep existing
+  if (!editId && status === 'published') {
+    data.published_at = new Date().toISOString();
+  }
+
+  // Remove undefined keys (slug on edit)
+  Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
+
+  try {
+    if (editId) {
+      const { error } = await sb.from('jobs').update(data).eq('id', editId);
+      if (error) throw error;
+      aToast('✅ Job updated successfully!', 'success');
+    } else {
+      // Check slug uniqueness
+      const { data: existing } = await sb.from('jobs').select('id').eq('slug', data.slug).maybeSingle();
+      if (existing) data.slug = data.slug + '-' + Date.now().toString().slice(-5);
+
+      const { data: prof } = await sb.auth.getUser();
+      data.created_by = prof?.user?.id;
+
+      const { error } = await sb.from('jobs').insert(data);
+      if (error) throw error;
+      aToast(status === 'published' ? '🎉 Job published! Now live on homepage.' : '📝 Draft saved.', 'success');
+    }
+
+    localStorage.removeItem('mcj_draft');
+    document.getElementById('saveStatus').textContent = '✅ Saved at ' + new Date().toLocaleTimeString('en-IN');
+    setTimeout(() => location.href = 'jobs.html', 1400);
+  } catch (err) {
+    aToast('❌ Save failed: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('saveBtnTxt').textContent = editId ? '💾 Update Job' : '💾 Publish Job';
+  }
+}
+
+/* ── Load Job for Edit ─────────────── */
+async function loadEdit(id) {
+  try {
+    const { data: j, error } = await sb.from('jobs').select('*').eq('id', id).single();
+    if (error || !j) { aToast('Job not found', 'error'); return; }
+
+    document.getElementById('fTitle').value    = j.title || '';
+    document.getElementById('fOrg').value      = j.organization || '';
+    document.getElementById('fCat').value      = j.category || '';
+    document.getElementById('fLoc').value      = j.location || 'Maharashtra';
+    document.getElementById('fDesc').value     = j.description || '';
+    document.getElementById('rich').innerHTML  = j.full_description || '';
+    document.getElementById('fApply').value    = j.apply_link || '';
+    document.getElementById('fVac').value      = j.vacancies || '';
+    document.getElementById('fSalary').value   = j.salary || '';
+    document.getElementById('fQual').value     = j.qualification || '';
+    document.getElementById('fExp').value      = j.experience || '';
+    document.getElementById('fAge').value      = j.age_limit || '';
+    document.getElementById('fExam').value     = j.exam_date || '';
+    document.getElementById('fLastDate').value = j.last_date || '';
+    document.getElementById('fSource').value   = j.source || '';
+    document.getElementById('fPrio').value     = j.priority || 'normal';
+    document.getElementById('fStatus').value   = j.status || 'published';
+    document.getElementById('fFeat').value     = String(j.is_featured || false);
+    document.getElementById('fMr').value       = j.marathi_title || '';
+    document.getElementById('dCnt').textContent = (j.description||'').length;
+
+    tags = j.tags || [];
+    renderTagChips();
+    onTitleChange();
+    updatePrev(); updateSEO(); updateRichCount();
+  } catch (err) {
+    aToast('Failed to load job: ' + err.message, 'error');
+  }
+}
+
+/* ── Toggle Preview Panel ──────────── */
+function togglePreview() {
+  const rp = document.getElementById('rightPanel');
+  const mg = document.getElementById('mainGrid');
+  rp.style.display = rp.style.display === 'none' ? 'block' : 'none';
+  mg.style.gridTemplateColumns = rp.style.display === 'none' ? '1fr' : '1fr 350px';
+}
+</script>
+</body>
+</html>

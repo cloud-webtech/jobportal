@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>All Jobs — Admin</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <style>
+    .jbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+    .ji{background:var(--s2);border:1.5px solid var(--bdr);border-radius:10px;padding:9px 13px;color:var(--txt);font-family:var(--body);font-size:.85rem;outline:none;transition:var(--ease);min-width:0}
+    .ji:focus{border-color:var(--or)}
+    .jis{flex:1;min-width:200px;padding-left:36px}
+    .ji-wrap{position:relative;flex:1;min-width:200px}
+    .ji-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:.9rem;pointer-events:none;color:var(--mt)}
+    .bulk-bar{display:none;background:var(--s2);border:1px solid var(--bdr);border-radius:12px;padding:12px 18px;margin-bottom:15px;display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+    .bulk-bar.show{display:flex}
+    .bk-cnt{font-size:.82rem;color:var(--mt);white-space:nowrap}
+    .bk-btn{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:6px 12px;font-size:.78rem;color:var(--txt);cursor:pointer;transition:var(--ease)}
+    .bk-btn:hover{border-color:var(--or);color:var(--or)}
+    .bk-btn.danger:hover{border-color:var(--rd);color:var(--rd)}
+    .pg-info{font-size:.8rem;color:var(--mt)}
+    .pg-btns{display:flex;gap:5px}
+    .pg-btn{padding:5px 11px;border:1px solid var(--bdr);border-radius:7px;background:var(--s2);color:var(--txt);font-size:.78rem;cursor:pointer;transition:var(--ease)}
+    .pg-btn:hover,.pg-btn.on{border-color:var(--or);color:var(--or)}
+    .pg-btn:disabled{opacity:.4;pointer-events:none}
+    .imp-zone{border:2px dashed var(--bdr);border-radius:11px;padding:14px;text-align:center;cursor:pointer;transition:var(--ease);background:var(--s2);position:relative;font-size:.82rem;color:var(--mt)}
+    .imp-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+    .imp-zone:hover{border-color:var(--or)}
+  </style>
+</head>
+<body>
+<aside class="sb" id="sidebar">
+  <div class="sb-logo"><span class="ico">💼</span><div><div style="font-family:var(--head);font-size:.97rem;font-weight:800">MyCareerJob</div><div style="font-size:.63rem;color:var(--or);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Admin Panel</div></div></div>
+  <div class="sb-sec">MAIN</div>
+  <nav class="sb-nav">
+    <a href="index.html" class="sb-link"><span class="sb-ico">📊</span><span>Dashboard</span></a>
+    <a href="jobs.html" class="sb-link on"><span class="sb-ico">💼</span><span>All Jobs</span></a>
+    <a href="add-job.html" class="sb-link"><span class="sb-ico">➕</span><span>Add New Job</span></a>
+    <a href="subscribers.html" class="sb-link"><span class="sb-ico">👥</span><span>Subscribers</span></a>
+  </nav>
+  <div class="sb-sec">SETTINGS</div>
+  <nav class="sb-nav">
+    <a href="settings.html" class="sb-link"><span class="sb-ico">⚙️</span><span>Settings</span></a>
+    <a href="../index.html" class="sb-link" target="_blank"><span class="sb-ico">🌐</span><span>View Live Site</span></a>
+    <a href="#" class="sb-link" onclick="adminLogout()"><span class="sb-ico">🚪</span><span>Logout</span></a>
+  </nav>
+  <div class="sb-foot">
+    <div class="av" data-admin-letter>A</div>
+    <div><div class="av-name" data-admin-name>Admin</div><div class="av-role" data-admin-role>Admin</div></div>
+    <div class="on-dot"></div>
+  </div>
+</aside>
+
+<div class="main" id="mainArea">
+  <header class="tb">
+    <div class="tb-left">
+      <button class="sb-tog" onclick="toggleSidebar()">☰</button>
+      <div class="bc"><span>Admin</span><span class="bc-sep">›</span><span class="bc-cur">All Jobs</span></div>
+    </div>
+    <div class="tb-right">
+      <a href="add-job.html" class="tb-btn">+ Add Job</a>
+      <div class="av" data-admin-letter>A</div>
+    </div>
+  </header>
+
+  <div class="pg">
+
+    <!-- Toolbar -->
+    <div class="jbar">
+      <div class="ji-wrap"><span class="ji-ico">🔍</span><input type="text" class="ji jis" id="srch" placeholder="Search jobs..." oninput="doFilter()"/></div>
+      <select class="ji" id="catF" onchange="doFilter()" style="min-width:140px">
+        <option value="">All Categories</option>
+        <option>Govt</option><option>IT</option><option>Private</option>
+        <option>Bank</option><option>Railway</option><option>Defence</option>
+        <option>Police</option><option>Health</option><option>Education</option>
+      </select>
+      <select class="ji" id="statF" onchange="doFilter()" style="min-width:130px">
+        <option value="">All Status</option>
+        <option>published</option><option>draft</option><option>expired</option><option>featured</option>
+      </select>
+      <select class="ji" id="sortF" onchange="doFilter()" style="min-width:130px">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="title">A → Z</option>
+        <option value="views">Most Viewed</option>
+      </select>
+      <button onclick="exportCSV()" class="ji" style="cursor:pointer;white-space:nowrap">📥 Export CSV</button>
+      <div class="imp-zone" style="min-width:180px">
+        <input type="file" accept=".json,.csv" onchange="importJobs(event)"/>
+        📁 Import JSON/CSV
+      </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-bar" id="bulkBar">
+      <span class="bk-cnt" id="bulkCnt">0 selected</span>
+      <button class="bk-btn" onclick="bulkPublish()">✅ Publish</button>
+      <button class="bk-btn" onclick="bulkDraft()">📝 Draft</button>
+      <button class="bk-btn danger" onclick="bulkDelete()">🗑️ Delete</button>
+      <button class="bk-btn" onclick="clearSel()">✕ Clear</button>
+    </div>
+
+    <!-- Table -->
+    <div class="panel">
+      <div class="ph">
+        <div class="pt">💼 Jobs <span class="nb" id="jcnt">0</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="rt-badge"><span class="rt-dot"></span>Live</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox" id="selAll" onchange="toggleAll(this)"/></th>
+              <th>Title & Organization</th>
+              <th>Category</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Views</th>
+              <th>Last Date</th>
+              <th>Added</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jobsTbody"><tr><td colspan="9" class="t-load">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;flex-wrap:wrap;gap:10px">
+        <div class="pg-info" id="pgInfo"></div>
+        <div class="pg-btns" id="pgBtns"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-c" id="toastContainer"></div>
+<script src="../js/supabase.js"></script>
+<script src="js/core.js"></script>
+<script>
+let ALL=[], filtered=[], selected=new Set(), page=1;
+const PER=20;
+
+document.addEventListener('DOMContentLoaded', async()=>{
+  await requireAuth(); initShell();
+  const params=new URLSearchParams(location.search);
+  const s=params.get('s');
+  if(s) document.getElementById('statF').value=s;
+  await loadAll();
+  subscribeRt();
+});
+
+async function loadAll(){
+  ALL = await DB.getAllJobs().catch(()=>[]);
+  doFilter();
+}
+
+function doFilter(){
+  const q=document.getElementById('srch').value.toLowerCase().trim();
+  const cat=document.getElementById('catF').value;
+  const stat=document.getElementById('statF').value;
+  const srt=document.getElementById('sortF').value;
+  filtered=ALL.filter(j=>{
+    const mq=!q||(j.title+j.organization+j.location+'').toLowerCase().includes(q);
+    const mc=!cat||j.category===cat;
+    const ms=!stat||j.status===stat;
+    return mq&&mc&&ms;
+  });
+  if(srt==='newest') filtered.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  else if(srt==='oldest') filtered.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  else if(srt==='title') filtered.sort((a,b)=>a.title.localeCompare(b.title));
+  else if(srt==='views') filtered.sort((a,b)=>(b.views||0)-(a.views||0));
+  page=1;
+  document.getElementById('jcnt').textContent=filtered.length;
+  renderTable();
+}
+
+function renderTable(){
+  const start=(page-1)*PER;
+  const slice=filtered.slice(start,start+PER);
+  const tbody=document.getElementById('jobsTbody');
+  if(!slice.length){tbody.innerHTML='<tr><td colspan="9" class="t-empty">No jobs found. <a href="add-job.html">Add one!</a></td></tr>';document.getElementById('pgInfo').textContent='No results';document.getElementById('pgBtns').innerHTML='';return;}
+  tbody.innerHTML=slice.map(j=>`
+    <tr id="row-${j.id}" class="${selected.has(j.id)?'sel':''}">
+      <td><input type="checkbox" ${selected.has(j.id)?'checked':''} onchange="toggleSel('${j.id}',this)"/></td>
+      <td><div class="tl">${h(j.title.slice(0,52))}${j.title.length>52?'…':''}</div><div class="ts">${h(j.organization||'—')}</div></td>
+      <td>${catPill(j.category)}</td>
+      <td style="font-size:.78rem;color:var(--mt)">📍 ${h(j.location||'—')}</td>
+      <td>${statusPill(j.status||'published')}</td>
+      <td style="font-size:.78rem;color:var(--mt)">${j.views||0}</td>
+      <td style="font-size:.75rem;color:${j.last_date?'var(--rd)':'var(--mt)'}">${j.last_date?'⏰ '+h(j.last_date):'—'}</td>
+      <td style="font-size:.75rem;color:var(--mt)">${fmtDate(j.created_at)}</td>
+      <td><div class="ra">
+        <a href="add-job.html?edit=${j.id}" class="rb" title="Edit">✏️</a>
+        <a href="../job.html?slug=${j.slug}" target="_blank" class="rb grn" title="View Live">👁️</a>
+        <button onclick="toggleStatus('${j.id}','${j.status}')" class="rb" title="Toggle status" style="font-size:.75rem">🔄</button>
+        <button onclick="delJob('${j.id}','${h(j.title.slice(0,30))}')" class="rb del" title="Delete">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+  // Pagination
+  const total=Math.ceil(filtered.length/PER);
+  document.getElementById('pgInfo').textContent=`Showing ${start+1}–${Math.min(start+PER,filtered.length)} of ${filtered.length}`;
+  const btns=[];
+  btns.push(`<button class="pg-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>←</button>`);
+  for(let i=1;i<=total;i++){
+    if(i===1||i===total||Math.abs(i-page)<=1) btns.push(`<button class="pg-btn ${i===page?'on':''}" onclick="goPage(${i})">${i}</button>`);
+    else if(Math.abs(i-page)===2) btns.push('<span style="padding:0 3px;color:var(--mt)">…</span>');
+  }
+  btns.push(`<button class="pg-btn" onclick="goPage(${page+1})" ${page===total?'disabled':''}>→</button>`);
+  document.getElementById('pgBtns').innerHTML=btns.join('');
+}
+
+function goPage(p){const t=Math.ceil(filtered.length/PER);if(p<1||p>t)return;page=p;renderTable();}
+
+function toggleSel(id,cb){if(cb.checked)selected.add(id);else selected.delete(id);document.getElementById('row-'+id)?.classList.toggle('sel',cb.checked);updateBulk();}
+function toggleAll(cb){filtered.slice((page-1)*PER,(page-1)*PER+PER).forEach(j=>{if(cb.checked)selected.add(j.id);else selected.delete(j.id);});renderTable();updateBulk();}
+function updateBulk(){const bar=document.getElementById('bulkBar');bar.style.display=selected.size?'flex':'none';document.getElementById('bulkCnt').textContent=selected.size+' selected';}
+function clearSel(){selected.clear();document.getElementById('selAll').checked=false;renderTable();updateBulk();}
+
+async function toggleStatus(id,cur){
+  const next=cur==='published'?'draft':'published';
+  try{await DB.updateJobStatus(id,next);const j=ALL.find(x=>x.id===id);if(j)j.status=next;doFilter();aToast('🔄 Status: '+next,'success');}
+  catch{aToast('❌ Failed','error');}
+}
+
+async function delJob(id,title){
+  if(!confirm(`Delete "${title}"?`))return;
+  try{await DB.deleteJob(id);ALL=ALL.filter(j=>j.id!==id);doFilter();aToast('🗑️ Deleted','success');}
+  catch{aToast('❌ Failed','error');}
+}
+
+async function bulkPublish(){await bulkStatus('published');}
+async function bulkDraft(){await bulkStatus('draft');}
+async function bulkStatus(s){
+  const ids=[...selected];
+  for(const id of ids){await DB.updateJobStatus(id,s).catch(()=>{});const j=ALL.find(x=>x.id===id);if(j)j.status=s;}
+  clearSel();doFilter();aToast(`✅ ${ids.length} jobs set to ${s}`,'success');
+}
+async function bulkDelete(){
+  if(!confirm(`Delete ${selected.size} jobs?`))return;
+  const ids=[...selected];
+  for(const id of ids){await DB.deleteJob(id).catch(()=>{});ALL=ALL.filter(j=>j.id!==id);}
+  clearSel();doFilter();aToast(`🗑️ Deleted ${ids.length} jobs`,'success');
+}
+
+async function exportCSV(){
+  const hdr='Title,Category,Location,Status,Organization,LastDate,ApplyLink,Created\n';
+  const rows=filtered.map(j=>`"${j.title}","${j.category}","${j.location}","${j.status}","${j.organization||''}","${j.last_date||''}","${j.apply_link||''}","${j.created_at}"`).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));a.download='jobs.csv';a.click();
+  aToast('📥 CSV exported','success');
+}
+
+function importJobs(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try{
+      let jobs;
+      if(file.name.endsWith('.json')){const d=JSON.parse(ev.target.result);jobs=d.jobs||d;}
+      else{const lines=ev.target.result.split('\n').slice(1).filter(Boolean);jobs=lines.map(l=>{const c=l.split(',').map(x=>x.replace(/^"|"$/g,''));return{title:c[0],category:c[1],location:c[2],status:c[3]||'draft',organization:c[4],last_date:c[5]||null,apply_link:c[6]||null,slug:slugify(c[0]||'job-'+Date.now()),created_at:new Date().toISOString()};}).filter(j=>j.title);}
+      let cnt=0;
+      for(const j of jobs){
+        if(!j.slug)j.slug=slugify(j.title||'job');
+        await sb.from('jobs').insert(j).then(()=>cnt++).catch(()=>{});
+      }
+      await loadAll();
+      aToast(`✅ Imported ${cnt} jobs`,'success');
+    }catch(err){aToast('❌ Import failed: '+err.message,'error');}
+  };
+  reader.readAsText(file);
+}
+
+function subscribeRt(){
+  sb.channel('jobs-admin')
+    .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},async()=>{await loadAll();aToast('🔄 Jobs updated','info');})
+    .subscribe();
+}
+</script>
+</body>
+</html>

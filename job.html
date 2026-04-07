@@ -16,7 +16,7 @@
 
 <header class="hdr" id="hdr">
   <div class="hdr-inner">
-    <a href="index.html" class="logo"><span class="logo-ico">💼</span>MyCareerJob<span>.in</span></a>
+    <a href="index.html" class="logo"><span class="logo-ico"></span>MyCareerJob<span>.in</span></a>
     <nav class="nav" id="nav">
       <a href="index.html">Home</a>
       <a href="jobs.html?cat=Govt">Govt Jobs</a>
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     DB.incrementViews(job.id);
     loadRelated(job.category, job.id);
   } catch(e) {
-    showNotFound('Could not load job. Check your internet connection.');
+    showNotFound('Could not load job.');
     console.error(e);
   }
 });
